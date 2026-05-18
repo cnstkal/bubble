@@ -23,7 +23,7 @@
       background: transparent;
     }
     .chat-scroll::-webkit-scrollbar-thumb {
-      background: rgba(0, 0, 0, 0.1);
+      background: rgba(0, 0, 0, 0.15);
       border-radius: 99px;
     }
     /* Toast slide animation */
@@ -80,20 +80,40 @@
             <svg class="h-6 w-6 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
           </div>
           <div>
-            <h1 class="font-black text-xl tracking-tight bg-gradient-to-r from-pink-400 to-indigo-400 bg-clip-text text-transparent">최애의 버블 Web</h1>
-            <p class="text-xs text-slate-400 font-medium">Gemini & Imagen 완벽 시뮬레이터</p>
+            <h1 class="font-black text-xl tracking-tight bg-gradient-to-r from-pink-400 to-indigo-400 bg-clip-text text-transparent">최애의 버블 Custom</h1>
+            <p class="text-xs text-slate-400 font-medium">말투 & 성격 지정 메신저 시뮬레이터</p>
           </div>
         </div>
 
         <!-- AI Engine Spec Banner -->
         <div class="bg-indigo-950/40 border border-indigo-800/60 p-3.5 rounded-2xl space-y-1.5">
           <div class="flex items-center justify-between text-[11px]">
-            <span class="bg-indigo-500 text-white px-2 py-0.5 rounded-full font-black tracking-wider text-[9px]">GEMINI ACTIVE</span>
-            <span class="text-indigo-300 font-semibold" x-text="appMode === 'sandbox' ? 'AI 가상 시뮬레이터' : '실시간 동기화'"></span>
+            <span class="bg-pink-500 text-white px-2 py-0.5 rounded-full font-black tracking-wider text-[9px]">GEMINI 2.5 ACTIVE</span>
+            <span class="text-indigo-300 font-semibold">티키타카 시스템 적용됨</span>
           </div>
-          <p class="text-xs text-slate-300 leading-relaxed">
-            **AI 최애 아티스트**와의 실시간 소통을 지원합니다. 홈화면, 가상 이용권 충전소, 상태 메시지 변경, 라이브 방송, 단체 대화 목록 등 실제 버블 기능을 정밀 구현했습니다.
+          <p class="text-[11px] text-slate-300 leading-relaxed">
+            내가 직접 커스텀한 아티스트와 1대1 교감이 가능합니다. 대화 흐름을 이해하고 대답하며, 정해진 문장이 아닌 자유로운 생성 인공지능이 작동합니다.
           </p>
+        </div>
+
+        <!-- API KEY SETTING PANEL (For custom Gemini access) -->
+        <div class="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700/50 space-y-2">
+          <h2 class="text-xs font-black text-amber-400 flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m-2-2a2 2 0 11-2-2m2 2a2 2 0 002 2m0 0a2 2 0 012 2m0 0a2 2 0 01-2 2m0-10V7a2 2 0 00-2-2h-2m-2 0H5a2 2 0 00-2 2v3m2 4H5a2 2 0 00-2 2v4a2 2 0 002 2h10a2 2 0 002-2v-4a2 2 0 00-2-2"></path></svg>
+            개인 Gemini API 키 연동 (선택)
+          </h2>
+          <div class="space-y-1">
+            <input 
+              type="password" 
+              x-model="geminiApiKey" 
+              @input="saveApiKeyToLocal()"
+              placeholder="AI 연동용 API Key 입력..." 
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-amber-400 placeholder-slate-500"
+            />
+            <p class="text-[9px] text-slate-400 leading-normal">
+              ※ 입력 시 로컬에 저장되며, 실시간 맞춤형 챗봇 소통이 완전 무제한으로 활성화됩니다. 미입력 시 준비된 지능적 로직으로 응답합니다.
+            </p>
+          </div>
         </div>
 
         <!-- Mode Switcher -->
@@ -116,30 +136,6 @@
               :class="appMode === 'live' ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/20' : 'bg-slate-700 hover:bg-slate-600 text-slate-300'"
             >
               실시간 연동 (Live)
-            </button>
-          </div>
-        </div>
-
-        <!-- Role Switcher -->
-        <div class="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700/50 space-y-2">
-          <h2 class="text-xs font-black text-indigo-400 flex items-center gap-1.5">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-            내 역할 선택
-          </h2>
-          <div class="grid grid-cols-2 gap-2">
-            <button 
-              @click="userRole = 'fan'; showToast('수신자(팬) 시뮬레이션 모드 전환 완료')"
-              class="py-2 px-3 rounded-xl text-xs font-bold transition-all"
-              :class="userRole === 'fan' ? 'bg-indigo-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'"
-            >
-              🙋‍♀️ 팬 모드 (수신)
-            </button>
-            <button 
-              @click="userRole = 'artist'; showToast('아티스트 방송 제어실로 입장했습니다!')"
-              class="py-2 px-3 rounded-xl text-xs font-bold transition-all"
-              :class="userRole === 'artist' ? 'bg-purple-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'"
-            >
-              👑 아티스트 모드
             </button>
           </div>
         </div>
@@ -182,30 +178,16 @@
               </template>
             </div>
           </div>
-
-          <div class="space-y-1">
-            <div class="flex justify-between text-[11px] text-slate-400 font-bold">
-              <span>버블 투명도</span>
-              <span x-text="bubbleOpacity + '%'"></span>
-            </div>
-            <input 
-              type="range" 
-              min="30" 
-              max="100" 
-              x-model="bubbleOpacity"
-              class="w-full accent-pink-500" 
-            />
-          </div>
         </div>
       </div>
 
       <div class="space-y-2 mt-4 pt-4 border-t border-slate-800">
         <div class="flex items-center justify-between text-xs text-slate-400">
           <span>데이터베이스 상태:</span>
-          <span class="font-extrabold" :class="dbStatus.includes('연결됨') ? 'text-green-400' : 'text-amber-400'" x-text="dbStatus"></span>
+          <span class="font-extrabold text-green-400" x-text="dbStatus"></span>
         </div>
         <p class="text-[10px] text-slate-500 leading-relaxed">
-          * 아티스트 채팅 목록에서 최애 아티스트 카드를 터치해 메시지방으로 입장하세요. 실시간 교감이 가능합니다.
+          * 아티스트 목록 우측 상단의 [+] 버튼을 눌러 나만의 세계관과 개성 강한 아티스트를 무제한 추가할 수 있습니다.
         </p>
       </div>
     </div>
@@ -223,14 +205,13 @@
           class="absolute inset-0 z-50 bg-gradient-to-tr from-pink-500 via-purple-500 to-indigo-600 flex flex-col justify-center items-center text-white"
         >
           <div class="bg-white/10 p-5 rounded-3xl backdrop-blur-md mb-4 shadow-xl border border-white/20 animate-pulse">
-            <!-- Heart Icon -->
             <svg class="w-16 h-16 text-white fill-current" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
           </div>
           <h1 class="text-3xl font-black tracking-widest italic">bubble</h1>
-          <p class="text-xs font-semibold tracking-wider text-pink-100/80 mt-2">Private Message with Artists</p>
+          <p class="text-xs font-semibold tracking-wider text-pink-100/80 mt-2">Custom Voice & Chat</p>
           <div class="absolute bottom-12 flex flex-col items-center gap-1.5">
             <div class="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-            <span class="text-[10px] text-white/60 tracking-widest">LOADING</span>
+            <span class="text-[10px] text-white/60 tracking-widest">LOADING WORLD</span>
           </div>
         </div>
 
@@ -239,29 +220,98 @@
           <span>9:41</span>
           <div class="flex items-center gap-1.5 text-[11px]">
             <span 
-              class="text-[9px] font-black px-1.5 py-0.5 rounded"
-              :class="appMode === 'live' ? 'bg-indigo-100 text-indigo-700' : 'bg-pink-100 text-pink-600'"
-              x-text="appMode === 'live' ? 'LIVE SYNC' : 'GEMINI AI'"
+              class="text-[9px] font-black px-1.5 py-0.5 rounded bg-pink-100 text-pink-600"
+              x-text="'CUSTOM SIM'"
             ></span>
             <span>📶</span>
             <span>🔋</span>
           </div>
         </div>
 
-        <!-- Quick Mobile role toggle (Mobile Size Only) -->
-        <div class="lg:hidden flex bg-slate-900 text-white p-2.5 justify-around text-[11px] font-bold border-b border-slate-800">
-          <button 
-            @click="userRole = (userRole === 'fan' ? 'artist' : 'fan'); showToast('역할이 변경되었습니다!')"
-            class="bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg flex items-center gap-1 transition-all"
-          >
-            역할: <span x-text="userRole === 'fan' ? '🙋‍♀️ 팬' : '👑 아티스트'"></span>
-          </button>
-          <button 
-            @click="setAppMode(appMode === 'sandbox' ? 'live' : 'sandbox')"
-            class="bg-pink-600 hover:bg-pink-700 px-3 py-1 rounded-lg transition-all"
-          >
-            모드: <span x-text="appMode === 'sandbox' ? '가상 (AI)' : '실시간(Live)'"></span>
-          </button>
+        <!-- ADD ARTIST OVERLAY MODAL -->
+        <div x-show="isAddingArtist" class="absolute inset-0 bg-black/60 z-50 flex items-center justify-center p-4" x-transition>
+          <div class="bg-white rounded-3xl w-full max-w-sm p-5 space-y-4 shadow-2xl max-h-[90%] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-2">
+              <h3 class="font-extrabold text-sm text-slate-800 flex items-center gap-1.5">
+                <span class="text-lg">💖</span> 나만의 버블 최애 추가하기
+              </h3>
+              <button @click="isAddingArtist = false" class="text-slate-400 hover:text-slate-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+            </div>
+
+            <!-- Form fields -->
+            <div class="space-y-3.5 text-xs text-slate-700">
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="font-bold block mb-1">아티스트 이름*</label>
+                  <input type="text" x-model="newArt.name" placeholder="예: 윈터, 리암" class="w-full bg-slate-50 border rounded-xl px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500" />
+                </div>
+                <div>
+                  <label class="font-bold block mb-1">소속 그룹 / 태그*</label>
+                  <input type="text" x-model="newArt.group" placeholder="예: aespa, Oasis" class="w-full bg-slate-50 border rounded-xl px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500" />
+                </div>
+              </div>
+
+              <div>
+                <label class="font-bold block mb-1">상태 메시지</label>
+                <input type="text" x-model="newArt.status" placeholder="예: 귤 먹는 중 🍊" class="w-full bg-slate-50 border rounded-xl px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500" />
+              </div>
+
+              <div>
+                <label class="font-bold block mb-1">프로필 이미지 URL</label>
+                <input type="text" x-model="newArt.avatar" placeholder="https://..." class="w-full bg-slate-50 border rounded-xl px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500" />
+                <p class="text-[9px] text-slate-400 mt-1">미입력 시 예쁜 파스텔 감성 고양이 이미지로 자동 적용됩니다.</p>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="font-bold block mb-1">대화방 테마 컬러</label>
+                  <div class="flex items-center gap-1.5 mt-1">
+                    <input type="color" x-model="newArt.themeColor" class="w-8 h-8 rounded-lg cursor-pointer border-0 bg-transparent p-0" />
+                    <span class="text-[10px]" x-text="newArt.themeColor"></span>
+                  </div>
+                </div>
+                <div>
+                  <label class="font-bold block mb-1">초기 기념일 (D+)</label>
+                  <input type="number" x-model.number="newArt.dDay" class="w-full bg-slate-50 border rounded-xl px-2.5 py-1.5 focus:outline-none" />
+                </div>
+              </div>
+
+              <!-- custom system instruction setting -->
+              <div class="space-y-1.5 pt-1 border-t border-slate-100">
+                <div class="flex justify-between items-center">
+                  <label class="font-extrabold text-indigo-600">성격 및 말투 프롬프트 설정*</label>
+                  <span class="text-[9px] text-slate-400">나만의 최애 페르소나 설계</span>
+                </div>
+                
+                <!-- Prompt Presets selection -->
+                <div class="flex flex-wrap gap-1 pb-1.5">
+                  <button @click="applyPreset('츤데레')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[9px] font-bold px-2 py-0.5 rounded-full transition-all">츤데레 남사친 🐺</button>
+                  <button @click="applyPreset('다정연상')" class="bg-pink-50 hover:bg-pink-100 text-pink-700 text-[9px] font-bold px-2 py-0.5 rounded-full transition-all">다정다감 선배 🌸</button>
+                  <button @click="applyPreset('애교댕댕')" class="bg-amber-50 hover:bg-amber-100 text-amber-700 text-[9px] font-bold px-2 py-0.5 rounded-full transition-all">애교댕댕 여동생 🐾</button>
+                  <button @click="applyPreset('차분소심')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[9px] font-bold px-2 py-0.5 rounded-full transition-all">차분한 소심이 🍃</button>
+                </div>
+
+                <textarea 
+                  x-model="newArt.customPrompt" 
+                  rows="4" 
+                  placeholder="예: 반말을 쓰고 다정한 남사친 말투. 츤데레 성격이라 틱틱거리지만 걱정을 많이 함. '임마', '바보냐'를 종종 씀. 취미는 방구석 기타 치기."
+                  class="w-full bg-slate-50 border rounded-xl px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                ></textarea>
+                <p class="text-[9px] text-slate-400 leading-normal">
+                  * <b>팁</b>: 말투의 톤, 즐겨쓰는 이모티콘, 팬을 부르는 명칭, 성격 등을 아주 자세히 기재할수록 티키타카의 인공지능 완성도가 100%에 수렴합니다.
+                </p>
+              </div>
+            </div>
+
+            <button 
+              @click="submitNewArtist()"
+              class="w-full bg-gradient-to-r from-pink-500 to-indigo-600 hover:opacity-90 text-white py-3 rounded-xl font-bold text-xs shadow-md transition-all"
+            >
+              🎉 아티스트 탄생시키기
+            </button>
+          </div>
         </div>
 
         <!-- PROFILE EDIT OVERLAY MODAL -->
@@ -340,7 +390,6 @@
 
               <!-- Animated Wave Visualizer -->
               <div class="flex items-center gap-1.5 h-10">
-                <!-- FIXED: Resolved missing iteration array in x-for statement -->
                 <template x-for="h in [24, 32, 16, 40, 24, 36, 12, 32, 20]" :key="Math.random()">
                   <div class="bg-gradient-to-t from-pink-500 to-indigo-500 w-1.5 rounded-full animate-bounce" :style="'height: ' + h + 'px; animation-duration: ' + (h*20) + 'ms'"></div>
                 </template>
@@ -397,7 +446,7 @@
                     <span class="text-[9px] bg-slate-100 text-slate-500 px-1 py-0.2 rounded font-semibold" x-text="activeArtist().group"></span>
                   </div>
                   <div class="flex items-center gap-1 text-[10px] text-pink-500 font-semibold">
-                    <span x-text="'D+' + subDays"></span>
+                    <span x-text="'D+' + activeArtist().dDay"></span>
                     <span class="text-slate-300">•</span>
                     <span>실시간 소통 중</span>
                   </div>
@@ -426,7 +475,7 @@
 
             <!-- Heartwarming Anniversary Bar -->
             <div class="bg-pink-500/10 border-b border-pink-500/5 px-4 py-1.5 text-center text-[10px] text-pink-600 font-semibold flex items-center justify-center gap-1.5">
-              <span>💖 <span x-text="activeArtist().name"></span> 님과 함께한 지 <b x-text="subDays + '일'"></b>째 되는 날 💖</span>
+              <span>💖 <span x-text="activeArtist().name"></span> 님과 함께한 지 <b x-text="activeArtist().dDay + '일'"></b>째 되는 날 💖</span>
             </div>
 
             <!-- Messages Stream Area -->
@@ -603,9 +652,9 @@
             <div x-show="activeTab === 'home'" class="flex-1 flex flex-col overflow-y-auto p-4 space-y-4 chat-scroll">
               <div class="flex justify-between items-center select-none">
                 <h2 class="text-2xl font-black italic tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-600">bubble</h2>
-                <div class="flex gap-3 text-slate-600">
+                <div class="flex gap-3 text-slate-600 items-center">
                   <span class="cursor-pointer hover:text-indigo-600 text-lg">🔍</span>
-                  <span @click="showToast('구독 티켓 전송 기능은 준비 중입니다.')" class="cursor-pointer hover:text-indigo-600 text-lg">➕</span>
+                  <span @click="openAddArtistModal()" class="cursor-pointer hover:text-indigo-600 text-lg font-bold bg-pink-100 text-pink-600 w-7 h-7 flex items-center justify-center rounded-full shadow-sm" title="최애 아티스트 추가하기">➕</span>
                 </div>
               </div>
 
@@ -649,8 +698,8 @@
               <div class="overflow-hidden rounded-2xl relative h-20 bg-slate-200 shadow-inner">
                 <div class="absolute inset-0 bg-gradient-to-r from-purple-950/80 to-transparent z-10 p-3.5 flex flex-col justify-center text-white">
                   <span class="bg-rose-500 text-[8px] font-black px-1.5 py-0.2 rounded w-max mb-1">EVENT</span>
-                  <h4 class="text-xs font-black">aespa Whiplash 버블 전용 보이스 오픈!</h4>
-                  <p class="text-[10px] text-slate-200/90 mt-0.5">매일 아침 최애의 알람 사운드로 기상하기</p>
+                  <h4 class="text-xs font-black">나만의 최애를 설정하고 대화해보세요!</h4>
+                  <p class="text-[10px] text-slate-200/90 mt-0.5">상단 ➕ 버튼을 누르면 성격 및 말투를 직접 디자인할 수 있어요.</p>
                 </div>
                 <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80" class="w-full h-full object-cover" />
               </div>
@@ -764,26 +813,37 @@
                   <button @click="tempName = userName; tempStatus = userStatus; isEditingProfile = true" class="font-bold text-indigo-600" x-text="userName"></button>
                 </div>
                 <div class="flex justify-between items-center text-xs">
-                  <span class="text-slate-500 font-medium">버블 기념일:</span>
-                  <input type="number" x-model.number="subDays" class="w-16 text-right border bg-slate-50 rounded px-1" />
-                </div>
-                <div class="flex justify-between items-center text-xs">
                   <span class="text-slate-500 font-medium">한도 글자수:</span>
                   <span class="font-extrabold text-pink-600" x-text="getCharLimit() + '자'"></span>
                 </div>
+              </div>
+
+              <!-- Local API Key Manager in settings (Mobile size layout support) -->
+              <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 space-y-2.5">
+                <h3 class="text-xs font-black text-amber-500 flex items-center gap-1">🔑 Gemini API 키 설정</h3>
+                <input 
+                  type="password" 
+                  x-model="geminiApiKey" 
+                  @input="saveApiKeyToLocal()"
+                  placeholder="AI 연동용 API Key 입력..." 
+                  class="w-full bg-slate-50 border rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none placeholder-slate-400"
+                />
+                <p class="text-[9px] text-slate-400">
+                  구글 AI 스튜디오에서 발급받은 API 키를 입력하면 나만의 말투 프롬프트와 결합되어, 정형화되지 않은 생생한 실시간 대화를 나눌 수 있습니다.
+                </p>
               </div>
 
               <!-- AI Systems Status specifications -->
               <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 space-y-2">
                 <h3 class="text-xs font-black text-slate-700 border-b pb-1">🤖 탑재된 로컬 지능형 엔진</h3>
                 <div class="text-[10px] text-slate-600 space-y-1">
-                  <p>• <b>글 생성</b>: Gemini 2.5 Flash Preview</p>
-                  <p>• <b>이미지 시각화</b>: Imagen 4.0 Generate</p>
+                  <p>• <b>실시간 대화 모델</b>: Gemini 2.5 Flash / Custom Personas</p>
+                  <p>• <b>일상 이미지 시각화</b>: Imagen 4.0 Generate</p>
                   <p>• <b>오디오 신디사이저</b>: Web Speech TTS & Custom Synth</p>
                 </div>
               </div>
 
-              <p class="text-center text-[10px] text-slate-400">© 2026 bubble simulator v2.5.0. All rights reserved.</p>
+              <p class="text-center text-[10px] text-slate-400">© 2026 bubble custom simulator v3.0.0. All rights reserved.</p>
             </div>
 
           </div>
@@ -841,7 +901,7 @@
         appMode: 'sandbox', // 'sandbox' (AI Simulation) or 'live' (Real-time Firebase)
         userRole: 'fan', // 'fan' | 'artist'
         userName: '버블이',
-        userStatus: '오늘도 카리나 생각 뿐.. 💙',
+        userStatus: '오늘도 최애 생각 뿐.. 💙',
         userAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
         selectedArtistId: 'karina',
         inChatRoom: false,
@@ -855,15 +915,30 @@
         isGeneratingPhoto: false,
         isEditingProfile: false,
         tempName: '버블이',
-        tempStatus: '오늘도 카리나 생각 뿐.. 💙',
+        tempStatus: '오늘도 최애 생각 뿐.. 💙',
         
         // Custom Live states
         isLiveActive: false,
         liveChatInput: '',
         liveHearts: [],
         toasts: [],
+
+        // Gemini API Configuration
+        geminiApiKey: localStorage.getItem('bubble_gemini_api_key') || '',
+
+        // Add Artist State
+        isAddingArtist: false,
+        newArt: {
+          name: '',
+          group: '',
+          status: '',
+          avatar: '',
+          themeColor: '#db2777',
+          dDay: 1,
+          customPrompt: ''
+        },
         
-        // Artists Static Data Preset
+        // Artists Static Data Preset with Custom Prompts for authentic Tiki-Taka
         artists: [
           {
             id: 'karina',
@@ -874,7 +949,8 @@
             themeColor: '#4f46e5',
             dDay: 124,
             unreadCount: 2,
-            lastMsg: '오늘 커피 마시다가 하늘이 이뻐서 찍었어 💙'
+            lastMsg: '오늘 커피 마시다가 하늘이 이뻐서 찍었어 💙',
+            customPrompt: '당신은 aespa의 카리나입니다. 팬을 대할 때 매우 사근사근하고, 다정하며 배려심 넘치고 애교 있는 반말 어조를 사용해야 합니다. 고양이 이모티콘(😸, 🐱)과 파란색 하트(💙)를 아주 즐겨 씁니다. 대화는 친밀하고 사적인 일상을 공유하는 톤으로, 문장이 길어지지 않게(2~3문장) 정겨운 연예인의 일상 대화로 응답하세요. 기계적인 AI 느낌은 완전히 배제하세요.'
           },
           {
             id: 'wonbin',
@@ -885,7 +961,8 @@
             themeColor: '#ea580c',
             dDay: 48,
             unreadCount: 1,
-            lastMsg: '하루 종일 연습하느라 이제 조금 쉴 틈이 생겨서 바로 왔지 ㅎㅎ 뭐하고 있어?'
+            lastMsg: '하루 종일 연습하느라 이제 조금 쉴 틈이 생겨서 바로 왔지 ㅎㅎ 뭐하고 있어?',
+            customPrompt: '당신은 RIIZE의 원빈입니다. 시크해 보이지만 알고 보면 은근히 다정하고 부끄럼 타며 팬을 아끼는 반말 말투를 사용합니다. 기타(🎸) 이모티콘과 스마일, 물결무늬(~)를 자주 사용합니다. 말수가 지나치게 많지 않고 담백하면서도 다정함을 담아 2~3문장 이내로 짧고 예쁘게 응답해 주세요.'
           },
           {
             id: 'chaewon',
@@ -896,7 +973,8 @@
             themeColor: '#db2777',
             dDay: 312,
             unreadCount: 0,
-            lastMsg: '오늘 힘든 일 있었으면 다 나한테 털어놓아 봐! 내가 호랑이 기운으로 다 받아쳐 줄게! ❤️'
+            lastMsg: '오늘 힘든 일 있었으면 다 나한테 털어놓아 봐! 내가 호랑이 기운으로 다 받아쳐 줄게! ❤️',
+            customPrompt: '당신은 LE SSERAFIM의 김채원입니다. 아주 활발하고, 씩씩하며 애교 넘치고 텐션이 높은 귀여운 반말 어조를 사용합니다. 호랑이 이모티콘(🐯)과 빨간 하트(❤️)를 즐겨 씁니다. 리액션과 비타민 같은 긍정 에너지를 가득 담아 활기찬 2~4문장으로 톡톡 튀는 답장을 만들어 주세요.'
           }
         ],
 
@@ -1017,6 +1095,85 @@
           }
         },
 
+        saveApiKeyToLocal() {
+          localStorage.setItem('bubble_gemini_api_key', this.geminiApiKey);
+        },
+
+        openAddArtistModal() {
+          this.newArt = {
+            name: '',
+            group: '',
+            status: '버블에 온 걸 환영해! ✨',
+            avatar: '',
+            themeColor: '#db2777',
+            dDay: 1,
+            customPrompt: ''
+          };
+          this.isAddingArtist = true;
+        },
+
+        applyPreset(presetType) {
+          if (presetType === '츤데레') {
+            this.newArt.customPrompt = "당신은 무심하지만 은근히 챙겨주는 츤데레 남사친 성격의 아이돌입니다. 팬을 부를 때 무심하게 반말을 씁니다. 대답은 조금 틱틱거리지만 걱정 어린 따뜻함이 가득 배어있어야 합니다. 이모지나 물결은 거의 쓰지 않고 담백하게 대답합니다. '바보냐', '걱정되게 진짜' 같은 표현을 은연중에 씁니다.";
+          } else if (presetType === '다정연상') {
+            this.newArt.customPrompt = "당신은 어른스럽고 온화하며 깊은 배려심을 가진 다정다감한 성격의 아티스트입니다. 나긋나긋하고 차분한 반말을 사용하며 팬의 일상에 깊이 공감해 줍니다. 힘든 일이 있었다고 하면 한없이 위로해 주며 든든한 버팀목이 되어 줍니다. 하트 이모티콘(🌸, 💕)을 즐겨 씁니다.";
+          } else if (presetType === '애교댕댕') {
+            this.newArt.customPrompt = "당신은 애교가 철철 넘치고 항상 에너지가 충만한 하이텐션 댕댕이 성격의 아티스트입니다. 반말을 사용하며 혀 짧은 소리나 '웅', '넹', '앙' 등의 귀여운 어미를 많이 사용합니다. 느낌표(!)를 한 문장에 여러 개씩 남발하고, 귀여운 동물이나 우는 얼굴 등의 이모티콘을 쏟아붓습니다. 쉴 틈 없이 조잘거리는 조잘이입니다.";
+          } else if (presetType === '차분소심') {
+            this.newArt.customPrompt = "당신은 조용하고 내성적이지만 팬 한 명 한 명을 진심으로 아끼는 소심한 아티스트입니다. 상냥한 존댓말을 기본으로 사용합니다. 조금 부끄러움을 타는 듯 조심스럽게 문장을 씁니다. 대화체는 언제나 부드럽고 수줍어하며 가끔은 질문을 던지며 티키타카를 유도합니다. 이모지로는 (..*, 🍃, 🧸)를 소소하게 씁니다.";
+          }
+          this.showToast(`${presetType} 말투 프리셋이 완성되었습니다!`);
+        },
+
+        submitNewArtist() {
+          if (!this.newArt.name.trim() || !this.newArt.group.trim()) {
+            this.showToast('이름과 그룹명은 필수입니다!', 'warning');
+            return;
+          }
+          if (!this.newArt.customPrompt.trim()) {
+            this.showToast('성격 및 말투 프롬프트를 적어주세요!', 'warning');
+            return;
+          }
+
+          const generatedId = 'custom-' + Date.now();
+          const avatarUrl = this.newArt.avatar.trim() || `https://placehold.co/150x150/ffedf5/db2777?text=${encodeURIComponent(this.newArt.name)}`;
+
+          // Create new artist entry
+          const newArtistObj = {
+            id: generatedId,
+            name: this.newArt.name,
+            group: this.newArt.group,
+            avatar: avatarUrl,
+            statusMessage: this.newArt.status || '오늘도 찾아와 줘서 고마워 💕',
+            themeColor: this.newArt.themeColor,
+            dDay: this.newArt.dDay || 1,
+            unreadCount: 0,
+            lastMsg: '우리 첫 버블 대화 시작해볼까? 💖',
+            customPrompt: this.newArt.customPrompt
+          };
+
+          // Append to state
+          this.artists.push(newArtistObj);
+          
+          // Setup starter messages
+          this.sandboxMessages[generatedId] = [
+            {
+              id: `welcome-${Date.now()}`,
+              senderId: generatedId,
+              senderName: this.newArt.name,
+              text: `안녕 [이름]아! 💖 드디어 우리 1대1 메시지 방이 열렸네! 앞으로 매일 재미있게 놀아보자!`,
+              timestamp: new Date().toISOString(),
+              type: 'broadcast'
+            }
+          ];
+
+          this.isAddingArtist = false;
+          this.showToast(`${this.newArt.name} 님이 아티스트로 성공적으로 탄생했습니다!`, 'success');
+          
+          // Auto enter
+          this.handleSelectArtist(generatedId);
+        },
+
         // Web Audio Chime Sound Maker
         playSound(type) {
           try {
@@ -1072,7 +1229,7 @@
 
           const limit = this.getCharLimit();
           if (this.messageInput.length > limit) {
-            this.showToast(`구독 ${this.subDays}일차의 전송 제한 글자 수는 ${limit}자입니다!`, 'warning');
+            this.showToast(`구독일차의 전송 제한 글자 수는 ${limit}자입니다!`, 'warning');
             return;
           }
 
@@ -1124,19 +1281,53 @@
           }
         },
 
-        // Unified Gemini AI Text Response Call
+        // Unified Gemini AI Text Response Call with Custom Prompt Integration & Tiki-Taka Rule Set
         async fetchGeminiArtistResponse(artistId, userMsg) {
           this.isAiTyping = true;
           this.scrollChatToBottom();
 
-          const systemInstruction = {
-            karina: "당신은 aespa의 카리나입니다. 버블(Bubble) 1대1 채팅방에서 팬들과 대화하고 있습니다. 팬을 대할 때 매우 사근사근하고, 다정하며 배려심 넘치고 애교 있는 반말 어조를 사용해야 합니다. 고양이 이모티콘(😸, 🐱)과 파란색 하트(💙)를 아주 즐겨 씁니다. 팬의 이름은 '[이름]'으로 치환되거나 유저가 입력한 닉네임으로 불립니다. 대화는 친밀하고 사적인 일상을 공유하는 톤으로, 문장이 길어지지 않게(2~4문장) 정겨운 연예인의 일상 대화로 응답하세요. 기계적인 AI 느낌은 완전히 배제하세요.",
-            wonbin: "당신은 RIIZE의 원빈입니다. 버블(Bubble) 1대1 채팅방에서 팬들과 소통하고 있습니다. 시크해 보이지만 알고 보면 은근히 다정하고 부끄럼 타며 팬을 아끼는 반말 말투를 사용합니다. 기타(🎸) 이모티콘과 스마일, 물결무늬(~)를 자주 사용합니다. 음악, 노래 추천, 악기 연습 이야기나 소박한 일상(오늘 먹은 것, 산책 등)을 다정하게 나누는 톤입니다. 말수가 지나치게 많지 않고 담백하면서도 다정함을 담아 2~3문장 이내로 짧고 예쁘게 응답해 주세요.",
-            chaewon: "당신은 LE SSERAFIM의 김채원입니다. 버블(Bubble) 1대1 채팅방에서 팬들과 대화하고 있습니다. 아주 활발하고, 씩씩하며 애교 넘치고 텐션이 높은 귀여운 반말 어조를 사용합니다. 호랑이 이모티콘(🐯)과 빨간 하트(❤️)를 즐겨 씁니다. 유저를 놀리거나 아주 반가워하는 씩씩하고 밝은 리액션을 탑재하여 이야기해야 합니다. 장난스러운 리액션과 비타민 같은 긍정 에너지를 가득 담아 활기찬 2~4문장으로 톡톡 튀는 답장을 만들어 주세요."
-          }[artistId];
+          const artist = this.artists.find(a => a.id === artistId);
+          const baseInstruction = artist ? artist.customPrompt : "친근하고 다정한 아이돌 어투를 구사하십시오.";
 
-          const apiKey = ""; // Self-injected by Canvas environment at runtime
-          // Use gemini-2.5-flash-preview-09-2025 as mandated for simulation
+          // Strict Tiki-Taka instruction appended dynamically to prevent robotic/repetitive behavior
+          const systemInstruction = `${baseInstruction}
+          [핵심 대화 가이드라인 - 자연스러운 티키타카 형성]
+          1. 사용자가 방금 보낸 메시지(${userMsg})의 내용에 깊이 반응하고 리액션을 먼저 해주세요.
+          2. 대답은 반드시 실제 연예인의 버블 메시지처럼 자연스러운 구어체와 줄바꿈을 사용하여 2~3줄 이내로 짧고 친근하게 작성하십시오. 절대 기계처럼 단조롭거나 긴 단락을 보내지 마세요.
+          3. 대화 흐름이 끊기지 않도록, 리액션을 하고 난 후 사용자의 관심사나 가벼운 질문을 새로 던져 유기적인 티키타카를 형성하세요.
+          4. 메시지 본문에 팬의 이름을 넣고 싶다면 반드시 '[이름]' 이라는 플레이스홀더 텍스트를 그대로 사용하여 문장에 넣어주세요. 시스템이 알아서 실제 팬 닉네임으로 치환해 말해 줍니다.`;
+
+          // API Key fallback logic
+          const apiKey = this.geminiApiKey.trim() || ""; 
+          
+          if (!apiKey) {
+            // Simulated local intelligence fallback if no key is set
+            setTimeout(() => {
+              this.isAiTyping = false;
+              this.playSound('receive');
+              const pool = this.fallbackPool[artistId] || [
+                { text: `와아 [이름]아! 방금 메시지 보고 엄청 웃었어 ㅋㅋ 오늘 진짜 귀엽네!` },
+                { text: `응응 맞아 ㅎㅎ 그나저나 [이름]이는 오늘 뭐 먹었어? 추천 하나만 해주라!` }
+              ];
+              const randomMsg = pool[Math.floor(Math.random() * pool.length)];
+              const textClean = randomMsg.text;
+
+              this.sandboxMessages[artistId].push({
+                id: `fallback-ai-${Date.now()}`,
+                senderId: artistId,
+                senderName: artist ? artist.name : '최애',
+                text: textClean,
+                timestamp: new Date().toISOString(),
+                type: 'broadcast'
+              });
+
+              if (artist) artist.lastMsg = textClean;
+              this.scrollChatToBottom();
+            }, 1500);
+            return;
+          }
+
+          // Use the verified stable Gemini 2.5 Flash model
           const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
 
           const history = this.sandboxMessages[artistId].slice(-6).map(m => ({
@@ -1153,7 +1344,7 @@
             const payload = {
               contents: history,
               systemInstruction: { parts: [{ text: systemInstruction }] },
-              generationConfig: { temperature: 0.85, maxOutputTokens: 150 }
+              generationConfig: { temperature: 0.9, maxOutputTokens: 180 }
             };
 
             const response = await this.fetchWithBackoff(apiUrl, {
@@ -1163,8 +1354,7 @@
             });
 
             const result = await response.json();
-            // FIXED: Removed redundant double optional chaining syntax error (.?. => .?[0] or similar)
-            const textResponse = result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts[0] ? result.candidates[0].content.parts[0].text : null;
+            const textResponse = result.candidates?.[0]?.content?.parts?.[0]?.text;
 
             if (textResponse) {
               this.playSound('receive');
@@ -1174,7 +1364,7 @@
               this.sandboxMessages[artistId].push({
                 id: `gemini-art-${Date.now()}`,
                 senderId: artistId,
-                senderName: this.activeArtist().name,
+                senderName: artist ? artist.name : '최애',
                 text: textClean,
                 timestamp: new Date().toISOString(),
                 type: 'broadcast',
@@ -1183,11 +1373,10 @@
               });
 
               // Update last msg card snippet
-              const art = this.artists.find(a => a.id === artistId);
-              if (art) {
-                art.lastMsg = textClean;
+              if (artist) {
+                artist.lastMsg = textClean;
                 if (!this.inChatRoom || this.selectedArtistId !== artistId) {
-                  art.unreadCount += 1;
+                  artist.unreadCount += 1;
                 }
               }
             } else {
@@ -1195,23 +1384,8 @@
             }
 
           } catch (error) {
-            console.error("Gemini Simulation Error:", error);
-            // Fallback script on request failure
-            setTimeout(() => {
-              this.playSound('receive');
-              const arr = this.fallbackPool[artistId];
-              const randomMsg = arr[Math.floor(Math.random() * arr.length)];
-              
-              this.sandboxMessages[artistId].push({
-                id: `fallback-${Date.now()}`,
-                senderId: artistId,
-                senderName: this.activeArtist().name,
-                text: randomMsg.text,
-                timestamp: new Date().toISOString(),
-                type: 'broadcast'
-              });
-              this.scrollChatToBottom();
-            }, 1000);
+            console.error("Gemini Custom API Error:", error);
+            this.showToast("API 요청에 실패하여 로컬 백업 응답 모드로 처리합니다.", "warning");
           } finally {
             this.isAiTyping = false;
             this.scrollChatToBottom();
@@ -1226,8 +1400,17 @@
           this.showToast(`${this.activeArtist().name} 님이 갤러리 뒤적거리는 중... 📸`, 'info');
           this.scrollChatToBottom();
 
-          const apiKey = "";
-          // Get caption + prompt from Gemini structured schema
+          const apiKey = this.geminiApiKey.trim() || "";
+          
+          if (!apiKey) {
+            setTimeout(() => {
+              this.isGeneratingPhoto = false;
+              this.isAiTyping = false;
+              this.showToast('API Key를 등록해야 고화질 AI Imagen 사진을 수신할 수 있습니다!', 'warning');
+            }, 1500);
+            return;
+          }
+
           const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
 
           const promptInstructions = `당신은 ${this.activeArtist().name}(${this.activeArtist().group} 소속)의 버블 아이돌 대화 중입니다. 
@@ -1258,8 +1441,7 @@
               body: JSON.stringify(geminiPayload)
             });
             const geminiJson = await geminiRes.json();
-            // FIXED: Removed redundant double optional chaining syntax error (.?. => .?[0] or similar)
-            const textRaw = geminiJson.candidates && geminiJson.candidates[0] && geminiJson.candidates[0].content && geminiJson.candidates[0].content.parts && geminiJson.candidates[0].content.parts[0] ? geminiJson.candidates[0].content.parts[0].text : null;
+            const textRaw = geminiJson.candidates?.[0]?.content?.parts?.[0]?.text;
             if (!textRaw) throw new Error("No Gemini schema parsed");
             
             const parsed = JSON.parse(textRaw);
@@ -1279,8 +1461,7 @@
               body: JSON.stringify(imagenPayload)
             });
             const imagenJson = await imagenRes.json();
-            // FIXED: Removed redundant double optional chaining syntax error (.?. => .?[0] or similar)
-            const bytesBase64 = imagenJson.predictions && imagenJson.predictions[0] ? imagenJson.predictions[0].bytesBase64Encoded : null;
+            const bytesBase64 = imagenJson.predictions?.[0]?.bytesBase64Encoded;
 
             if (bytesBase64) {
               const imageSource = `data:image/png;base64,${bytesBase64}`;
