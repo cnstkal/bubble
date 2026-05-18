@@ -1,0 +1,2096 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>망돌로 살아남기 : AI 연동 에디션 (메이플 픽셀 미연시)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=DungGeunMo&family=Inter:wght@400;600;800&family=Noto+Sans+KR:wght@300;500;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Font styling */
+        body {
+            font-family: 'Noto Sans KR', 'Inter', sans-serif;
+            background-color: #0b071e;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+        
+        .retro-font {
+            font-family: 'DungGeunMo', monospace;
+        }
+
+        /* Scanline retro effect */
+        .scanlines {
+            position: relative;
+            overflow: hidden;
+        }
+        .scanlines::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 10;
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e1b4b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #db2777;
+            border-radius: 4px;
+        }
+
+        /* Float animation */
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); opacity: 0.8; }
+            50% { transform: translateY(-10px) rotate(3deg); opacity: 1; }
+            100% { transform: translateY(0px) rotate(0deg); opacity: 0.8; }
+        }
+        .float-anim {
+            animation: float 4s ease-in-out infinite;
+        }
+        
+        /* Heartbeat */
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            14% { transform: scale(1.08); }
+            28% { transform: scale(1); }
+            42% { transform: scale(1.08); }
+            70% { transform: scale(1); }
+        }
+        .heartbeat-anim {
+            animation: heartbeat 2s infinite;
+        }
+
+        /* Shaking effect */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+            20%, 40%, 60%, 80% { transform: translateX(4px); }
+        }
+        .shake-effect {
+            animation: shake 0.5s;
+        }
+
+        /* Pixel borders */
+        .pixel-border {
+            border: 4px solid #fff;
+            border-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M2 2h2v2H2zm2-2h4v2H4zm4 2h2v2H8zm2 2h2v4h-2zm-2 4h2v2H8zm-4 2h4v-2H4zm-2-2h2v-2H2zm-2-4h2v4H0z' fill='%23ec4899'/%3E%3C/svg%3E") 4 fill stretch;
+        }
+        
+        .pixel-border-gold {
+            border: 4px solid #fff;
+            border-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M2 2h2v2H2zm2-2h4v2H4zm4 2h2v2H8zm2 2h2v4h-2zm-2 4h2v2H8zm-4 2h4v-2H4zm-2-2h2v-2H2zm-2-4h2v4H0z' fill='%23fbbf24'/%3E%3C/svg%3E") 4 fill stretch;
+        }
+
+        /* Grid Background pattern */
+        .pixel-bg {
+            background-color: #0b071e;
+            background-image: 
+                linear-gradient(rgba(139, 92, 246, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(139, 92, 246, 0.08) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+<body class="pixel-bg scanlines min-h-screen flex flex-col justify-between">
+
+    <!-- SOUND EFFECTS & BGM ENGINE -->
+    <script>
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+        let bgmTimeout = null;
+        let isMuted = false;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioCtx();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSound(type) {
+            if (isMuted) return;
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(450, now);
+                osc.frequency.exponentialRampToValueAtTime(900, now + 0.08);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                osc.start(now);
+                osc.stop(now + 0.08);
+            } else if (type === 'blush') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(120, now);
+                osc.frequency.exponentialRampToValueAtTime(190, now + 0.12);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === 'success') {
+                osc.type = 'square';
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, idx) => {
+                    const oscN = audioCtx.createOscillator();
+                    const gainN = audioCtx.createGain();
+                    oscN.type = 'square';
+                    oscN.frequency.setValueAtTime(freq, now + idx * 0.07);
+                    oscN.connect(gainN);
+                    gainN.connect(audioCtx.destination);
+                    gainN.gain.setValueAtTime(0.08, now + idx * 0.07);
+                    gainN.gain.exponentialRampToValueAtTime(0.005, now + idx * 0.07 + 0.2);
+                    oscN.start(now + idx * 0.07);
+                    oscN.stop(now + idx * 0.07 + 0.2);
+                });
+            } else if (type === 'stat_up') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(350, now);
+                osc.frequency.exponentialRampToValueAtTime(700, now + 0.12);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                osc.start(now);
+                osc.stop(now + 0.12);
+            } else if (type === 'sad') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(250, now);
+                osc.frequency.linearRampToValueAtTime(120, now + 0.35);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            }
+        }
+
+        function startBGM() {
+            if (isMuted) return;
+            initAudio();
+            if (bgmTimeout) clearTimeout(bgmTimeout);
+            
+            const notes = [
+                329.63, 349.23, 392.00, 523.25, 493.88, 392.00, 440.00, 349.23,
+                329.63, 392.00, 523.25, 587.33, 493.88, 392.00, 440.00, 349.23
+            ];
+            
+            let bar = 0;
+            const playNote = () => {
+                if (isMuted || !audioCtx || audioCtx.state === 'suspended') return;
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(notes[bar % notes.length], now);
+                
+                const bassOsc = audioCtx.createOscillator();
+                const bassGain = audioCtx.createGain();
+                bassOsc.type = 'sine';
+                bassOsc.frequency.setValueAtTime(notes[bar % notes.length] / 2, now);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                bassOsc.connect(bassGain);
+                bassGain.connect(audioCtx.destination);
+                
+                gain.gain.setValueAtTime(0.04, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                
+                bassGain.gain.setValueAtTime(0.06, now);
+                bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                
+                osc.start(now);
+                osc.stop(now + 0.4);
+                bassOsc.start(now);
+                bassOsc.stop(now + 0.4);
+                
+                bar++;
+                bgmTimeout = setTimeout(playNote, 420);
+            };
+            
+            playNote();
+        }
+        
+        function toggleMute() {
+            isMuted = !isMuted;
+            const btn = document.getElementById('mute-btn');
+            if (isMuted) {
+                btn.innerHTML = '🔈 소리 끔';
+                if (bgmTimeout) clearTimeout(bgmTimeout);
+            } else {
+                btn.innerHTML = '🔊 소리 켬';
+                initAudio();
+                startBGM();
+            }
+            playSound('click');
+        }
+    </script>
+
+    <!-- HEADER PANEL -->
+    <header class="w-full bg-slate-950/80 border-b-2 border-pink-500/50 p-3 md:p-4 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+                <span class="text-pink-500 heartbeat-anim text-2xl">✨</span>
+                <div>
+                    <h1 class="retro-font text-lg md:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 tracking-wider">
+                        망돌로 살아남기! <span class="text-xs bg-pink-500/30 text-pink-300 border border-pink-400 px-1.5 py-0.5 rounded ml-1">AI Edition</span>
+                    </h1>
+                    <p class="text-[10px] md:text-xs text-pink-300/80 uppercase tracking-widest">A Flop Idol's AI Romance & Raising Sim</p>
+                </div>
+            </div>
+            
+            <!-- Dynamic Top Stats Display -->
+            <div id="header-stats" class="hidden flex flex-wrap items-center gap-2 md:gap-4 text-[10px] md:text-xs font-semibold">
+                <div class="bg-slate-900 border border-purple-500/30 px-2 md:px-3 py-1 rounded-lg flex items-center gap-1">
+                    <span class="text-yellow-400">📅</span>
+                    <span id="stat-day" class="retro-font text-pink-400">Week 1 (Day 1)</span>
+                </div>
+                <div class="bg-slate-900 border border-purple-500/30 px-2 md:px-3 py-1 rounded-lg flex items-center gap-1">
+                    <span class="text-pink-400">👥 팬덤</span>
+                    <span id="stat-fans" class="retro-font text-white">120명</span>
+                </div>
+                <div class="bg-slate-900 border border-purple-500/30 px-2 md:px-3 py-1 rounded-lg flex items-center gap-1">
+                    <span class="text-green-400">💵 자금</span>
+                    <span id="stat-funds" class="retro-font text-green-300">50만원</span>
+                </div>
+                <div class="bg-slate-900 border border-purple-500/30 px-2 md:px-3 py-1 rounded-lg flex items-center gap-1">
+                    <span class="text-red-400">💥 스트레스</span>
+                    <span id="stat-stress" class="retro-font text-red-300">10%</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <!-- AI Key Status / Settings -->
+                <button onclick="toggleAPIKeyModal()" id="ai-status-btn" class="retro-font bg-pink-950/80 hover:bg-pink-900 text-yellow-300 border border-yellow-400 px-2.5 py-1 text-[11px] rounded-md transition-all">
+                    🔑 Gemini AI 미설정
+                </button>
+                <button id="mute-btn" onclick="toggleMute()" class="retro-font bg-indigo-950 hover:bg-indigo-900 text-pink-400 border border-pink-500/30 px-2.5 py-1 text-[11px] rounded-md transition-all">
+                    🔈 소리 끔
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN INTERFACE -->
+    <main class="flex-grow max-w-6xl w-full mx-auto p-4 flex flex-col justify-center items-center relative">
+        
+        <!-- API KEY SETTING MODAL -->
+        <div id="api-key-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+            <div class="bg-slate-900 border-2 border-yellow-400 p-6 rounded-2xl max-w-md w-full relative pixel-border-gold shadow-2xl">
+                <button onclick="toggleAPIKeyModal()" class="absolute top-3 right-3 text-slate-400 hover:text-white text-xl font-bold">&times;</button>
+                <h3 class="retro-font text-lg font-bold text-yellow-400 mb-3 flex items-center gap-2">🔑 Gemini API 키 연결</h3>
+                <p class="text-xs text-slate-300 mb-4 leading-relaxed">
+                    이 게임은 <strong>Gemini API</strong>를 사용해 캐릭터들과 실시간 프리 토킹 및 동적 인공지능 스토리 창작을 체험할 수 있습니다.<br>
+                    <span class="text-pink-400 font-semibold">* API 키 없이도 클래식 오프라인 모드로 온전히 게임을 진행하실 수 있습니다!</span>
+                </p>
+                <div class="space-y-3">
+                    <input type="password" id="api-key-input" class="w-full bg-slate-950 border border-purple-500/50 rounded-lg px-3 py-2 text-white text-xs font-mono focus:outline-none focus:border-yellow-400" placeholder="AI API Key 입력 (AI_KEY)">
+                    <p class="text-[10px] text-slate-400">입력된 키는 안전하게 브라우저 로컬 저장소(localStorage)에만 저장됩니다.</p>
+                    <div class="flex gap-2">
+                        <button onclick="saveAPIKey()" class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-bold py-2 rounded-lg text-xs transition-all">키 저장 및 적용</button>
+                        <button onclick="removeAPIKey()" class="bg-red-950 hover:bg-red-900 text-red-300 px-3 rounded-lg text-xs transition-all">삭제</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TITLE SCREEN ================= -->
+        <section id="screen-title" class="w-full flex flex-col items-center justify-center py-6 md:py-10 text-center">
+            <div class="relative mb-6 float-anim">
+                <div class="absolute -inset-1 rounded-lg bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-500 opacity-75 blur-md animate-pulse"></div>
+                <div class="relative bg-slate-950 p-5 md:p-8 rounded-xl pixel-border border-pink-500 max-w-lg">
+                    <span class="text-xs font-bold text-pink-400 tracking-widest block mb-2 uppercase">Otome Pixel Idle AI Sim</span>
+                    <h1 class="retro-font text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-purple-300 to-yellow-200 leading-tight">
+                        망돌로 살아남기
+                    </h1>
+                    <p class="text-xs md:text-sm text-slate-300 mt-4 leading-relaxed">
+                        데뷔 2년 차, 소속사 계약 만료까지 남은 일주일은 단 <span class="text-yellow-400 font-bold">5주일(35일)</span>.<br>
+                        망해가는 루미나를 우주 스타로 키우고 최애 멤버와 실시간 대화를 즐기세요!<br>
+                        <span class="text-pink-300 font-bold">★ Gemini 3.1 Flash가 생성하는 무한 로맨스 스토리 탑재 ★</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Previews of Handsome Dot Boys -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl w-full mb-6 px-4">
+                <div class="bg-slate-900/60 p-2 rounded-xl border border-pink-500/20 flex flex-col items-center hover:scale-105 transition-transform">
+                    <div class="w-16 h-16 mb-2" id="preview-ch-1"></div>
+                    <span class="text-xs font-bold text-pink-300">한도진 (츤데레 리더)</span>
+                </div>
+                <div class="bg-slate-900/60 p-2 rounded-xl border border-purple-500/20 flex flex-col items-center hover:scale-105 transition-transform">
+                    <div class="w-16 h-16 mb-2" id="preview-ch-2"></div>
+                    <span class="text-xs font-bold text-yellow-300">강하온 (댕댕이 보컬)</span>
+                </div>
+                <div class="bg-slate-900/60 p-2 rounded-xl border border-indigo-500/20 flex flex-col items-center hover:scale-105 transition-transform">
+                    <div class="w-16 h-16 mb-2" id="preview-ch-3"></div>
+                    <span class="text-xs font-bold text-purple-300">서은우 (치명적 라이벌)</span>
+                </div>
+                <div class="bg-slate-900/60 p-2 rounded-xl border border-slate-500/20 flex flex-col items-center hover:scale-105 transition-transform">
+                    <div class="w-16 h-16 mb-2" id="preview-ch-4"></div>
+                    <span class="text-xs font-bold text-slate-300">민재현 (갓벽 매니저)</span>
+                </div>
+            </div>
+
+            <!-- Start Game Buttons -->
+            <div class="flex flex-col sm:flex-row gap-4 w-full max-w-xs px-4">
+                <button onclick="showCharacterCreation()" class="retro-font w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-extrabold py-3.5 px-6 rounded-xl border-b-4 border-purple-800 transition-all text-base shadow-lg shadow-pink-500/20 transform hover:-translate-y-0.5">
+                    게임 시작하기 ▶
+                </button>
+            </div>
+        </section>
+
+
+        <!-- ================= CHARACTER CUSTOMIZATION SCREEN ================= -->
+        <section id="screen-setup" class="hidden w-full max-w-xl bg-slate-900/90 p-5 md:p-6 rounded-2xl pixel-border border-purple-500/80 shadow-2xl">
+            <h2 class="retro-font text-xl font-bold text-pink-400 mb-4 text-center border-b border-purple-500/30 pb-3">🌟 주인공 프로필 등록 🌟</h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-pink-300 mb-1.5">당신의 이름은 무엇인가요?</label>
+                    <input type="text" id="player-name" value="이유림" class="w-full bg-slate-950 border-2 border-purple-500/50 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-pink-500 retro-font text-sm" placeholder="이름을 입력하세요">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-pink-300 mb-1.5">우리의 소중한 그룹 이름은?</label>
+                    <input type="text" id="group-name" value="루미나" class="w-full bg-slate-950 border-2 border-purple-500/50 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-pink-500 retro-font text-sm" placeholder="그룹 명칭">
+                </div>
+
+                <!-- Ability roll -->
+                <div class="bg-slate-950 p-3 rounded-xl border border-purple-500/30">
+                    <h3 class="text-xs font-bold text-yellow-300 mb-2.5 flex justify-between items-center">
+                        📊 초기 스펙 설정 
+                        <button onclick="rollInitialStats()" class="bg-purple-600 hover:bg-purple-700 text-white text-[10px] px-2 py-0.5 rounded transition-all">주사위 🎲</button>
+                    </h3>
+                    <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                        <div class="bg-slate-900 p-2 rounded-lg border border-pink-500/20">
+                            <span class="text-slate-400 block text-[10px]">🎤 보컬</span>
+                            <span id="init-vocal" class="retro-font text-base font-bold text-pink-400">15</span>
+                        </div>
+                        <div class="bg-slate-900 p-2 rounded-lg border border-pink-500/20">
+                            <span class="text-slate-400 block text-[10px]">💃 댄스</span>
+                            <span id="init-dance" class="retro-font text-base font-bold text-purple-400">12</span>
+                        </div>
+                        <div class="bg-slate-900 p-2 rounded-lg border border-pink-500/20">
+                            <span class="text-slate-400 block text-[10px]">✨ 비주얼</span>
+                            <span id="init-visual" class="retro-font text-base font-bold text-yellow-400">18</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Run with AI Choice -->
+                <div class="bg-slate-950 p-3 rounded-xl border border-yellow-500/30 flex items-center justify-between gap-3">
+                    <div>
+                        <span class="text-xs text-yellow-300 font-bold block">🤖 AI 시나리오 엔진 활성화</span>
+                        <span class="text-[10px] text-slate-400 leading-tight block">Gemini API로 맞춤형 일일 이벤트 및 채팅을 가동합니다. 비활성화 시 일반 오프라인 에피소드가 출력됩니다.</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="ai-toggle-checkbox" class="sr-only peer" checked>
+                        <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-600"></div>
+                    </label>
+                </div>
+
+                <button onclick="startGame()" class="retro-font w-full bg-pink-600 hover:bg-pink-700 text-white font-extrabold py-3 px-6 rounded-xl border-b-4 border-pink-800 transition-all text-sm shadow-lg">
+                    이 조건으로 데뷔 서바이벌 시작하기! 🚀
+                </button>
+            </div>
+        </section>
+
+
+        <!-- ================= MAIN GAME DASHBOARD ================= -->
+        <section id="screen-dashboard" class="hidden w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-5">
+            
+            <!-- Left Panel: Stats and Training Status (4 cols) -->
+            <div class="lg:col-span-4 space-y-4">
+                
+                <!-- Player profile Card -->
+                <div class="bg-slate-950 p-4 rounded-2xl border-2 border-purple-500/30 shadow-xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-pink-500/10 rounded-full blur-xl"></div>
+                    
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-14 h-14 bg-slate-900 rounded-xl border border-pink-500/40 p-1" id="dash-player-portrait"></div>
+                        <div>
+                            <span class="text-[9px] bg-pink-600 text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">LUMINA 메인 멤버</span>
+                            <h3 id="dash-player-name" class="retro-font text-base font-extrabold text-white">이유림</h3>
+                            <p class="text-[10px] text-slate-400 italic">"절대 포기하지 않아, 정상을 찍을 거야!"</p>
+                        </div>
+                    </div>
+
+                    <!-- Individual Stats Bars -->
+                    <div class="space-y-2 pt-2 border-t border-purple-500/20 text-xs">
+                        <div>
+                            <div class="flex justify-between text-[11px] mb-1">
+                                <span class="text-pink-300">🎤 보컬</span>
+                                <span id="val-vocal" class="retro-font text-pink-400">15</span>
+                            </div>
+                            <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden">
+                                <div id="bar-vocal" class="bg-pink-500 h-full rounded-full transition-all" style="width: 15%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-[11px] mb-1">
+                                <span class="text-purple-300">💃 안무</span>
+                                <span id="val-dance" class="retro-font text-purple-400">12</span>
+                            </div>
+                            <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden">
+                                <div id="bar-dance" class="bg-purple-500 h-full rounded-full transition-all" style="width: 12%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-[11px] mb-1">
+                                <span class="text-yellow-300">✨ 비주얼</span>
+                                <span id="val-visual" class="retro-font text-yellow-400">18</span>
+                            </div>
+                            <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden">
+                                <div id="bar-visual" class="bg-yellow-400 h-full rounded-full transition-all" style="width: 18%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Romance Affinities Card -->
+                <div class="bg-slate-950 p-4 rounded-2xl border-2 border-pink-500/20 shadow-xl">
+                    <h4 class="retro-font text-xs font-extrabold text-pink-400 mb-3 flex items-center gap-1.5">
+                        💖 캐릭터별 호감도 및 LUMINA 메신저
+                    </h4>
+                    
+                    <div class="space-y-3">
+                        <!-- Han Do-jin -->
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-10 h-10 bg-slate-900 rounded-lg p-0.5 border border-cyan-500/30 flex-shrink-0" id="dash-ch-1"></div>
+                            <div class="flex-grow">
+                                <div class="flex justify-between items-center text-[10px]">
+                                    <span class="font-bold text-cyan-300">한도진 (리더)</span>
+                                    <span id="love-ch-1" class="retro-font text-pink-400">10%</span>
+                                </div>
+                                <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden mt-1">
+                                    <div id="bar-love-ch-1" class="bg-cyan-400 h-full" style="width: 10%"></div>
+                                </div>
+                            </div>
+                            <button onclick="openMessenger('ch-1')" class="bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-400/30 text-[9px] px-2 py-1 rounded">TALK</button>
+                        </div>
+
+                        <!-- Kang Ha-on -->
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-10 h-10 bg-slate-900 rounded-lg p-0.5 border border-yellow-500/30 flex-shrink-0" id="dash-ch-2"></div>
+                            <div class="flex-grow">
+                                <div class="flex justify-between items-center text-[10px]">
+                                    <span class="font-bold text-yellow-300">강하온 (보컬)</span>
+                                    <span id="love-ch-2" class="retro-font text-pink-400">15%</span>
+                                </div>
+                                <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden mt-1">
+                                    <div id="bar-love-ch-2" class="bg-yellow-400 h-full" style="width: 15%"></div>
+                                </div>
+                            </div>
+                            <button onclick="openMessenger('ch-2')" class="bg-yellow-950 hover:bg-yellow-900 text-yellow-300 border border-yellow-400/30 text-[9px] px-2 py-1 rounded">TALK</button>
+                        </div>
+
+                        <!-- Seo Eun-woo -->
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-10 h-10 bg-slate-900 rounded-lg p-0.5 border border-indigo-500/30 flex-shrink-0" id="dash-ch-3"></div>
+                            <div class="flex-grow">
+                                <div class="flex justify-between items-center text-[10px]">
+                                    <span class="font-bold text-indigo-300">서은우 (라이벌)</span>
+                                    <span id="love-ch-3" class="retro-font text-pink-400">0%</span>
+                                </div>
+                                <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden mt-1">
+                                    <div id="bar-love-ch-3" class="bg-indigo-400 h-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <button onclick="openMessenger('ch-3')" class="bg-indigo-950 hover:bg-indigo-900 text-indigo-300 border border-indigo-400/30 text-[9px] px-2 py-1 rounded">TALK</button>
+                        </div>
+
+                        <!-- Min Jae-hyun -->
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-10 h-10 bg-slate-900 rounded-lg p-0.5 border border-slate-500/30 flex-shrink-0" id="dash-ch-4"></div>
+                            <div class="flex-grow">
+                                <div class="flex justify-between items-center text-[10px]">
+                                    <span class="font-bold text-slate-300">민재현 (매니저)</span>
+                                    <span id="love-ch-4" class="retro-font text-pink-400">5%</span>
+                                </div>
+                                <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden mt-1">
+                                    <div id="bar-love-ch-4" class="bg-slate-400 h-full" style="width: 5%"></div>
+                                </div>
+                            </div>
+                            <button onclick="openMessenger('ch-4')" class="bg-slate-950 hover:bg-slate-900 text-slate-300 border border-slate-400/30 text-[9px] px-2 py-1 rounded">TALK</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Schedule & Actions (8 cols) -->
+            <div class="lg:col-span-8 space-y-4">
+                <!-- Status Notifications / Log -->
+                <div class="bg-indigo-950/40 p-3 rounded-xl border border-indigo-500/25 flex items-start gap-2.5">
+                    <span class="text-lg">📢</span>
+                    <div>
+                        <h5 class="text-[10px] font-bold text-pink-300 uppercase tracking-widest">오늘의 연예계 소식 & 컴백 가이드</h5>
+                        <p class="text-[11px] text-slate-200 mt-0.5" id="weekly-mission-desc">
+                            "1주일 차: 연습실에서 보컬과 안무를 다지며, 틈틈이 밤 알바와 버스킹으로 자금 및 최초의 찐팬들을 확보하세요!"
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Daily Planner & Schedule Board -->
+                <div class="bg-slate-900/95 p-5 rounded-2xl pixel-border border-purple-500 shadow-2xl relative">
+                    <h3 class="retro-font text-lg font-bold text-pink-400 mb-3 flex justify-between items-center">
+                        📅 오늘 스케줄 선택
+                        <span class="text-[11px] font-normal text-slate-400" id="agenda-day-left">남은 일수: 35일</span>
+                    </h3>
+
+                    <p class="text-[11px] text-slate-300 mb-4">원하는 활동을 결정해 하루를 진행합니다. AI 시나리오 엔진을 활성화하면 매번 완전히 색다른 만남 사건이 터져나옵니다!</p>
+
+                    <div id="training-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <!-- Vocal Train -->
+                        <button onclick="performSchedule('vocal')" class="flex items-center gap-3 bg-slate-950 hover:bg-pink-950/20 border-2 border-pink-500/20 hover:border-pink-500 p-3 rounded-xl text-left transition-all duration-300 group">
+                            <span class="text-2xl p-1.5 bg-pink-500/10 rounded-lg group-hover:scale-105 transition-transform">🎤</span>
+                            <div>
+                                <h4 class="font-bold text-pink-300 text-xs">보컬 트레이닝</h4>
+                                <p class="text-[10px] text-slate-400 mt-0.5">보컬 실력 +5, 스트레스 +10%</p>
+                            </div>
+                        </button>
+
+                        <!-- Dance Train -->
+                        <button onclick="performSchedule('dance')" class="flex items-center gap-3 bg-slate-950 hover:bg-purple-950/20 border-2 border-purple-500/20 hover:border-purple-500 p-3 rounded-xl text-left transition-all duration-300 group">
+                            <span class="text-2xl p-1.5 bg-purple-500/10 rounded-lg group-hover:scale-105 transition-transform">💃</span>
+                            <div>
+                                <h4 class="font-bold text-purple-300 text-xs">격렬한 안무 맹연습</h4>
+                                <p class="text-[10px] text-slate-400 mt-0.5">안무 표현력 +5, 스트레스 +12%</p>
+                            </div>
+                        </button>
+
+                        <!-- Visual Makeover -->
+                        <button onclick="performSchedule('visual')" class="flex items-center gap-3 bg-slate-950 hover:bg-yellow-950/20 border-2 border-yellow-500/20 hover:border-yellow-500 p-3 rounded-xl text-left transition-all duration-300 group">
+                            <span class="text-2xl p-1.5 bg-yellow-500/10 rounded-lg group-hover:scale-105 transition-transform">✨</span>
+                            <div>
+                                <h4 class="font-bold text-yellow-300 text-xs">미모 및 스피치 다듬기</h4>
+                                <p class="text-[10px] text-slate-400 mt-0.5">무대 비주얼 +5, 스트레스 +8%</p>
+                            </div>
+                        </button>
+
+                        <!-- Busking (Fandom) -->
+                        <button onclick="performSchedule('busking')" class="flex items-center gap-3 bg-slate-950 hover:bg-emerald-950/20 border-2 border-emerald-500/20 hover:border-emerald-500 p-3 rounded-xl text-left transition-all duration-300 group">
+                            <span class="text-2xl p-1.5 bg-emerald-500/10 rounded-lg group-hover:scale-105 transition-transform">🎸</span>
+                            <div>
+                                <h4 class="font-bold text-emerald-300 text-xs">홍대 길거리 버스킹</h4>
+                                <p class="text-[10px] text-slate-400 mt-0.5">팬덤 유입 대폭 증가, 스트레스 +15%</p>
+                            </div>
+                        </button>
+
+                        <!-- Alb -->
+                        <button onclick="performSchedule('job')" class="flex items-center gap-3 bg-slate-950 hover:bg-blue-950/20 border-2 border-blue-500/20 hover:border-blue-500 p-3 rounded-xl text-left transition-all duration-300 group">
+                            <span class="text-2xl p-1.5 bg-blue-500/10 rounded-lg group-hover:scale-105 transition-transform">🏪</span>
+                            <div>
+                                <h4 class="font-bold text-blue-300 text-xs">야간 편의점 아르바이트</h4>
+                                <p class="text-[10px] text-slate-400 mt-0.5">자금 +15만원, 스트레스 +15%</p>
+                            </div>
+                        </button>
+
+                        <!-- Rest -->
+                        <button onclick="performSchedule('rest')" class="flex items-center gap-3 bg-slate-950 hover:bg-teal-950/20 border-2 border-teal-500/20 hover:border-teal-500 p-3 rounded-xl text-left transition-all duration-300 group">
+                            <span class="text-2xl p-1.5 bg-teal-500/10 rounded-lg group-hover:scale-105 transition-transform">😴</span>
+                            <div>
+                                <h4 class="font-bold text-teal-300 text-xs">스파 및 꿀맛 같은 수면</h4>
+                                <p class="text-[10px] text-slate-400 mt-0.5">스트레스 -25% 폭풍 회복</p>
+                            </div>
+                        </button>
+                    </div>
+
+                    <!-- Activity log -->
+                    <div class="mt-4 border-t border-purple-500/20 pt-3">
+                        <span class="text-[9px] uppercase font-bold text-pink-400 tracking-wider block mb-1">최근 활동 로그</span>
+                        <div id="game-logs" class="bg-slate-950 rounded-xl p-2.5 h-20 overflow-y-auto text-[11px] text-slate-300 space-y-1 retro-font">
+                            <div>• 루미나 기획사에서 생존 컴백 데드라인 계약서가 날아왔습니다.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ================= VISUAL NOVEL & DIALOGUE CONTAINER ================= -->
+        <section id="screen-dialogue" class="hidden w-full max-w-4xl flex flex-col justify-between h-[520px] md:h-[600px] bg-slate-950/95 p-4 rounded-2xl pixel-border border-pink-500 relative overflow-hidden shadow-2xl">
+            <!-- Stage Background -->
+            <div id="dialogue-stage" class="absolute inset-0 bg-cover bg-center opacity-25 z-0 transition-all duration-700"></div>
+            <!-- Canvas Particles Overlay -->
+            <canvas id="stage-effects" class="absolute inset-0 pointer-events-none z-10"></canvas>
+
+            <!-- Top Header -->
+            <div class="relative z-20 flex justify-between items-center bg-slate-950/80 border border-pink-500/20 px-3 py-1 rounded-xl text-xs">
+                <span id="sc-location" class="font-bold text-pink-300">📍 연습실 앞 골목길</span>
+                <span id="sc-chapter" class="retro-font text-slate-400">Chapter 1. 시련의 데뷔 위기</span>
+            </div>
+
+            <!-- Center Character Sprite -->
+            <div class="relative z-10 flex-grow flex items-end justify-center py-4 h-1/2">
+                <div id="speaker-container" class="w-48 h-48 md:w-56 md:h-56 flex flex-col items-center justify-end transform translate-y-2 transition-transform duration-300">
+                    <!-- Injected SVG -->
+                </div>
+            </div>
+
+            <!-- Loading overlay inside dialogue -->
+            <div id="ai-loading" class="hidden absolute inset-0 bg-slate-950/80 z-30 flex flex-col items-center justify-center gap-3">
+                <div class="w-10 h-10 border-4 border-pink-500 border-t-transparent rounded-full animate-spin"></div>
+                <p class="retro-font text-pink-400 text-xs animate-pulse">Gemini AI가 가슴 뛰는 설렘 상황을 구상 중입니다...</p>
+            </div>
+
+            <!-- Dialogue Text & choices -->
+            <div class="relative z-20 w-full bg-slate-900/95 p-4 rounded-xl border border-purple-500/30">
+                <!-- Name Tag -->
+                <div class="absolute -top-3.5 left-5 bg-pink-600 border border-white text-white px-3 py-0.5 retro-font text-xs font-bold rounded" id="speaker-nametag">
+                    한도진
+                </div>
+
+                <!-- Text Line -->
+                <div class="min-h-[60px] text-xs md:text-sm leading-relaxed text-slate-100 font-medium pt-1.5" id="speaker-text">
+                    "야, 똑바로 좀 안 해? 우리가 이딴 수준이니까 삼류 망돌 소릴 들으며 계약 파기 위기에 오는 거라고. 똑바로 들어, 내 곁에서 낙오하는 꼴은 못 보니까."
+                </div>
+
+                <!-- Next Indicator -->
+                <div class="text-right text-[9px] text-pink-400/80 blink animate-pulse mt-1.5" id="next-indicator">
+                    화면 터치 시 계속... ▶
+                </div>
+
+                <!-- Choices Wrapper -->
+                <div id="choice-container" class="hidden flex flex-col gap-2 mt-3 border-t border-purple-500/15 pt-3">
+                    <!-- Dynamic Buttons -->
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ================= SMARTPHONE CHAT (LUMINA TALK) ================= -->
+        <section id="screen-messenger" class="hidden w-full max-w-md bg-slate-950 rounded-3xl border-4 border-slate-800 p-4 shadow-2xl relative overflow-hidden flex flex-col h-[600px] justify-between">
+            <!-- Top Notch & Header -->
+            <div class="border-b border-purple-500/20 pb-2.5 flex justify-between items-center flex-shrink-0">
+                <div class="flex items-center gap-2">
+                    <button onclick="closeMessengerUI()" class="text-slate-400 hover:text-white text-lg font-bold">◀</button>
+                    <div class="w-9 h-9 bg-slate-900 border border-purple-500/30 rounded-full p-0.5" id="chat-ch-avatar"></div>
+                    <div>
+                        <h3 id="chat-ch-name" class="retro-font text-xs font-bold text-white">한도진</h3>
+                        <span id="chat-ch-status" class="text-[9px] text-emerald-400">● LUMINA TALK 온에어</span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span id="chat-ch-affinity" class="retro-font text-[10px] text-pink-400">호감도 10%</span>
+                </div>
+            </div>
+
+            <!-- Messages Window -->
+            <div id="chat-messages-box" class="flex-grow my-3 p-2 overflow-y-auto space-y-2 text-xs flex flex-col">
+                <!-- Injected Chat Bubbles -->
+            </div>
+
+            <!-- Chat Loading Indicator -->
+            <div id="chat-loader" class="hidden text-center text-[10px] text-pink-400 animate-pulse pb-1">
+                LUMINA TALK 답장을 입력 중입니다... 💬
+            </div>
+
+            <!-- Chat Input Area -->
+            <div class="flex gap-2 border-t border-purple-500/20 pt-2 flex-shrink-0">
+                <input type="text" id="chat-user-input" class="flex-grow bg-slate-900 border border-purple-500/40 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-pink-500" placeholder="그에게 귓속말이나 문자를 건네보세요..." onkeydown="if(event.key === 'Enter') sendChatMessage()">
+                <button onclick="sendChatMessage()" class="bg-pink-600 hover:bg-pink-700 text-white font-extrabold px-3 py-2 rounded-xl text-xs transition-all">전송</button>
+            </div>
+        </section>
+
+
+        <!-- ================= ENDING SCREEN ================= -->
+        <section id="screen-ending" class="hidden w-full max-w-2xl bg-slate-950 p-6 md:p-8 rounded-2xl pixel-border border-yellow-500 shadow-2xl text-center">
+            <span class="text-3xl heartbeat-anim block mb-3">🏆</span>
+            <h2 id="ending-title" class="retro-font text-xl md:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-400 to-indigo-400 leading-tight">
+                최정상 은하계 탑돌 엔딩
+            </h2>
+            
+            <div class="flex justify-center my-4">
+                <div id="ending-portrait" class="w-36 h-36 bg-slate-900 rounded-2xl p-1.5 border-2 border-yellow-400 shadow-lg"></div>
+            </div>
+
+            <!-- Custom AI Novelized Epilogue Display -->
+            <div id="ending-desc-container" class="relative max-h-72 overflow-y-auto p-4 bg-slate-900/60 rounded-xl border border-yellow-500/20 mb-6 text-left">
+                <div id="ending-desc" class="text-xs md:text-sm text-slate-300 leading-relaxed space-y-2">
+                    축하합니다! 루미나를 전 세계의 빌보드 1위 자리에 우뚝 세웠습니다.
+                </div>
+                <!-- AI Epilogue Loading Overlay -->
+                <div id="epilogue-ai-loading" class="hidden absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center gap-2">
+                    <div class="w-8 h-8 border-3 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+                    <span class="retro-font text-yellow-300 text-[10px]">Gemini AI가 연인과의 특별한 소설 에필로그를 실시간으로 조립하는 중...</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xs mx-auto">
+                <button onclick="restartGame()" class="retro-font bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-xl border-b-4 border-pink-800 transition-all text-xs">
+                    다른 엔딩 탐색 (다시 시작) 🔄
+                </button>
+                <button onclick="shareResult()" class="retro-font bg-indigo-900 hover:bg-indigo-800 text-pink-300 font-bold py-2 px-4 rounded-xl border-b-4 border-indigo-950 transition-all text-xs">
+                    결과 공유하기 🔗
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="w-full text-center py-3 bg-slate-950/60 border-t border-purple-950/40 text-[9px] text-slate-500 tracking-wider">
+        © 2026 LUMINA Entertainment Inc. Powered by Gemini Pro AI Real-time Engine.
+    </footer>
+
+
+    <!-- SVG GENERATOR FOR CHARACTERS -->
+    <script>
+        const SKIN_LIGHT = "#ffebd9";
+        const SHADOW_COLOR = "#dfb4aa";
+
+        function getCharacterSVG(charId, expression = 'neutral') {
+            let hairColor, eyeColor, clothesColor, eyebrowType, eyeState, mouthState, acc = '';
+            
+            if (charId === 'player') {
+                hairColor = '#ff6b8b'; 
+                eyeColor = '#1d1d1d';
+                clothesColor = '#4c1d95'; 
+                eyebrowType = `<path d="M42 42 h8 M70 42 h8" stroke="#ff3b60" stroke-width="3" stroke-linecap="square"/>`;
+                
+                if (expression === 'smiling') {
+                    eyeState = `<rect x="42" y="48" width="8" height="4" fill="#ff6b8b"/><rect x="70" y="48" width="8" height="4" fill="#ff6b8b"/>`;
+                    mouthState = `<path d="M54 66 h12 v3 h-12 z" fill="#ff3b60"/>`;
+                } else if (expression === 'blushing') {
+                    eyeState = `<rect x="40" y="46" width="10" height="10" fill="#111"/><rect x="70" y="46" width="10" height="10" fill="#111"/>`;
+                    mouthState = `<path d="M56 65 h8 v2 h-8 z" fill="#111"/>`;
+                    acc = `<circle cx="38" cy="60" r="5" fill="#f43f5e" opacity="0.6"/><circle cx="82" cy="60" r="5" fill="#f43f5e" opacity="0.6"/>`;
+                } else if (expression === 'sad') {
+                    eyebrowType = `<path d="M40 45 L48 41 M72 41 L80 45" stroke="#ff3b60" stroke-width="2.5"/>`;
+                    eyeState = `<rect x="40" y="48" width="10" height="6" fill="#111"/><rect x="70" y="48" width="10" height="6" fill="#111"/>`;
+                    mouthState = `<path d="M56 68 Q60 62 64 68" stroke="#111" stroke-width="2.5" fill="none"/>`;
+                } else { 
+                    eyeState = `<rect x="40" y="46" width="10" height="10" fill="#111"/><rect x="70" y="46" width="10" height="10" fill="#111"/><rect x="44" y="50" width="3" height="3" fill="#fff"/><rect x="74" y="50" width="3" height="3" fill="#fff"/>`;
+                    mouthState = `<path d="M54 66 h12 v2 h-12 z" fill="#111"/>`;
+                }
+            }
+            else if (charId === 'ch-1') { // 한도진
+                hairColor = '#cbd5e1'; 
+                eyeColor = '#06b6d4'; 
+                clothesColor = '#1e293b'; 
+                eyebrowType = `<path d="M40 42 L48 45 M72 45 L80 42" stroke="#475569" stroke-width="3"/>`;
+                
+                if (expression === 'smiling') {
+                    eyeState = `<rect x="42" y="48" width="8" height="4" fill="#06b6d4"/><rect x="70" y="48" width="8" height="4" fill="#06b6d4"/>`;
+                    mouthState = `<path d="M54 66 h12 v3 h-12 z" fill="#ff4d4d"/>`;
+                } else if (expression === 'blushing') {
+                    eyeState = `<rect x="40" y="46" width="10" height="8" fill="#111"/><rect x="70" y="46" width="10" height="8" fill="#111"/>`;
+                    mouthState = `<path d="M56 65 h8 v2 h-8 z" fill="#111"/>`;
+                    acc = `<circle cx="38" cy="58" r="5" fill="#f43f5e" opacity="0.6"/><circle cx="82" cy="58" r="5" fill="#f43f5e" opacity="0.6"/>`;
+                } else if (expression === 'sad') {
+                    eyebrowType = `<path d="M42 45 L48 42 M72 42 L78 45" stroke="#475569" stroke-width="3"/>`;
+                    eyeState = `<rect x="40" y="48" width="10" height="6" fill="#111"/><rect x="70" y="48" width="10" height="6" fill="#111"/>`;
+                    mouthState = `<path d="M56 68 Q60 62 64 68" stroke="#111" stroke-width="3" fill="none"/>`;
+                } else if (expression === 'surprised') {
+                    eyeState = `<rect x="40" y="44" width="10" height="12" fill="#111"/><rect x="70" y="44" width="10" height="12" fill="#111"/>`;
+                    mouthState = `<circle cx="60" cy="66" r="3" fill="#111"/>`;
+                } else { 
+                    eyeState = `<rect x="40" y="46" width="10" height="8" fill="#111"/><rect x="70" y="46" width="10" height="8" fill="#111"/><rect x="42" y="48" width="3" height="3" fill="#06b6d4"/><rect x="72" y="48" width="3" height="3" fill="#06b6d4"/>`;
+                    mouthState = `<path d="M55 66 h10 v2 h-10 z" fill="#111"/>`;
+                }
+            } 
+            else if (charId === 'ch-2') { // 강하온
+                hairColor = '#fef08a'; 
+                eyeColor = '#b45309'; 
+                clothesColor = '#db2777'; 
+                eyebrowType = `<path d="M42 41 Q45 44 49 41 M71 41 Q75 44 79 41" stroke="#b45309" stroke-width="2.5" fill="none"/>`;
+                
+                if (expression === 'smiling') {
+                    eyeState = `<path d="M40 50 Q45 45 50 50" stroke="#b45309" stroke-width="4" fill="none"/><path d="M70 50 Q75 45 80 50" stroke="#b45309" stroke-width="4" fill="none"/>`;
+                    mouthState = `<path d="M52 64 Q60 74 68 64 Z" fill="#ff4d4d"/>`;
+                    acc = `<circle cx="36" cy="58" r="5" fill="#f43f5e" opacity="0.4"/><circle cx="84" cy="58" r="5" fill="#f43f5e" opacity="0.4"/>`;
+                } else if (expression === 'blushing') {
+                    eyeState = `<rect x="40" y="46" width="10" height="10" fill="#111"/><rect x="70" y="46" width="10" height="10" fill="#111"/>`;
+                    mouthState = `<path d="M54 65 Q60 71 66 65" stroke="#111" stroke-width="2.5" fill="none"/>`;
+                    acc = `<circle cx="36" cy="58" r="6" fill="#f43f5e" opacity="0.7"/><circle cx="84" cy="58" r="6" fill="#f43f5e" opacity="0.7"/>`;
+                } else if (expression === 'sad') {
+                    eyebrowType = `<path d="M40 45 L48 41 M72 41 L80 45" stroke="#b45309" stroke-width="2.5"/>`;
+                    eyeState = `<rect x="40" y="48" width="10" height="6" fill="#111"/><rect x="70" y="48" width="10" height="6" fill="#111"/>`;
+                    mouthState = `<path d="M55 67 h10 v2 h-10 z" fill="#111"/>`;
+                } else { 
+                    eyeState = `<rect x="40" y="46" width="10" height="10" fill="#111"/><rect x="70" y="46" width="10" height="10" fill="#111"/><rect x="45" y="49" width="3" height="3" fill="#fff"/><rect x="75" y="49" width="3" height="3" fill="#fff"/>`;
+                    mouthState = `<path d="M53 64 Q60 70 67 64" stroke="#111" stroke-width="2.5" fill="none"/>`;
+                }
+            }
+            else if (charId === 'ch-3') { // 서은우
+                hairColor = '#1e1b4b'; 
+                eyeColor = '#818cf8'; 
+                clothesColor = '#111827'; 
+                eyebrowType = `<path d="M41 40 h9 M70 40 h9" stroke="#111" stroke-width="3"/>`;
+                
+                if (expression === 'smiling') {
+                    eyeState = `<rect x="40" y="46" width="10" height="6" fill="#111"/><rect x="70" y="46" width="10" height="6" fill="#111"/>`;
+                    mouthState = `<path d="M53 64 Q60 60 67 64 L67 67 Q60 68 53 67 Z" fill="#b91c1c"/>`;
+                } else if (expression === 'blushing') {
+                    eyeState = `<rect x="40" y="46" width="10" height="8" fill="#111"/><rect x="70" y="46" width="10" height="8" fill="#111"/>`;
+                    mouthState = `<path d="M56 65 h8 v2 h-8 z" fill="#111"/>`;
+                    acc = `<circle cx="37" cy="58" r="5" fill="#f43f5e" opacity="0.5"/><circle cx="83" cy="58" r="5" fill="#f43f5e" opacity="0.5"/>`;
+                } else if (expression === 'sad') {
+                    eyeState = `<rect x="40" y="48" width="10" height="6" fill="#111"/><rect x="70" y="48" width="10" height="6" fill="#111"/>`;
+                    mouthState = `<path d="M55 67 h10 v2 h-10 z" fill="#111"/>`;
+                } else { 
+                    eyeState = `<rect x="40" y="45" width="10" height="8" fill="#111"/><rect x="70" y="45" width="10" height="8" fill="#111"/><rect x="41" y="47" width="3" height="3" fill="#818cf8"/><rect x="71" y="47" width="3" height="3" fill="#818cf8"/>`;
+                    mouthState = `<path d="M55 65 h10 v2 h-10 z" fill="#111"/>`;
+                    acc = `<circle cx="78" cy="59" r="1.5" fill="#000"/>`; // 매력점
+                }
+            }
+            else if (charId === 'ch-4') { // 민재현
+                hairColor = '#451a03'; 
+                eyeColor = '#111'; 
+                clothesColor = '#334155'; 
+                eyebrowType = `<path d="M41 40 Q45 42 49 40 M71 40 Q75 42 79 40" stroke="#451a03" stroke-width="2.5" fill="none"/>`;
+                
+                if (expression === 'smiling') {
+                    eyeState = `<path d="M41 48 Q45 44 49 48" stroke="#111" stroke-width="2.5" fill="none"/><path d="M71 48 Q75 44 79 48" stroke="#111" stroke-width="2.5" fill="none"/>`;
+                    mouthState = `<path d="M53 64 Q60 70 67 64" stroke="#ff4d4d" stroke-width="2.5" fill="none"/>`;
+                } else if (expression === 'blushing') {
+                    eyeState = `<rect x="41" y="46" width="8" height="8" fill="#111"/><rect x="71" y="46" width="8" height="8" fill="#111"/>`;
+                    mouthState = `<path d="M55 65 h10 v2 h-10 z" fill="#111"/>`;
+                    acc = `<circle cx="36" cy="57" r="5" fill="#f43f5e" opacity="0.5"/><circle cx="84" cy="57" r="5" fill="#f43f5e" opacity="0.5"/>`;
+                } else if (expression === 'sad') {
+                    eyeState = `<rect x="41" y="48" width="8" height="5" fill="#111"/><rect x="71" y="48" width="8" height="5" fill="#111"/>`;
+                    mouthState = `<path d="M56 67 Q60 63 64 67" stroke="#111" stroke-width="2.5" fill="none"/>`;
+                } else { 
+                    eyeState = `<rect x="41" y="46" width="8" height="8" fill="#111"/><rect x="71" y="46" width="8" height="8" fill="#111"/>`;
+                    mouthState = `<path d="M54 65 h12 v2 h-12 z" fill="#111"/>`;
+                }
+
+                // Glasses
+                acc += `
+                    <rect x="36" y="42" width="16" height="12" fill="none" stroke="#fbbf24" stroke-width="2" rx="2.5"/>
+                    <rect x="66" y="42" width="16" height="12" fill="none" stroke="#fbbf24" stroke-width="2" rx="2.5"/>
+                    <line x1="52" y1="48" x2="66" y2="48" stroke="#fbbf24" stroke-width="2"/>
+                `;
+            }
+
+            return `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%" style="image-rendering: pixelated;">
+                    <!-- Shoulders -->
+                    <path d="M35 100 C 35 85, 85 85, 85 100 L 95 120 L 25 120 Z" fill="${clothesColor}"/>
+                    <path d="M50 85 L 60 95 L 70 85 Z" fill="${SKIN_LIGHT}"/>
+                    <!-- Face -->
+                    <rect x="30" y="35" width="60" height="50" rx="14" fill="${SKIN_LIGHT}"/>
+                    <path d="M35 75 Q 60 90 85 75" fill="none" stroke="${SHADOW_COLOR}" stroke-width="1.8"/>
+                    <!-- Ears -->
+                    <circle cx="27" cy="60" r="5" fill="${SKIN_LIGHT}"/>
+                    <circle cx="93" cy="60" r="5" fill="${SKIN_LIGHT}"/>
+                    <!-- Hair Back -->
+                    <path d="M25 50 Q 60 20 95 50 L 90 80 Q 60 75 30 80 Z" fill="${hairColor}"/>
+                    <!-- Facial expression -->
+                    ${eyebrowType}
+                    ${eyeState}
+                    ${mouthState}
+                    ${acc}
+                    <!-- Hair Bangs Front -->
+                    <path d="M26 40 Q 40 25 60 30 Q 80 25 94 40 C 90 20, 30 20, 26 40 Z" fill="${hairColor}"/>
+                    <path d="M28 35 Q 45 47 52 35 Q 60 47 70 35 Q 85 45 92 35" fill="none" stroke="${hairColor}" stroke-width="5" stroke-linecap="round"/>
+                </svg>
+            `;
+        }
+    </script>
+
+
+    <!-- GEMINI API CALL MODULE -->
+    <script>
+        let GEMINI_API_KEY = localStorage.getItem('GEMINI_API_KEY') || '';
+
+        // UI trigger for settings modal
+        function toggleAPIKeyModal() {
+            playSound('click');
+            const modal = document.getElementById('api-key-modal');
+            modal.classList.toggle('hidden');
+            if (!modal.classList.contains('hidden')) {
+                document.getElementById('api-key-input').value = GEMINI_API_KEY;
+            }
+        }
+
+        function saveAPIKey() {
+            const val = document.getElementById('api-key-input').value.trim();
+            GEMINI_API_KEY = val;
+            localStorage.setItem('GEMINI_API_KEY', val);
+            updateAIStatusBtn();
+            toggleAPIKeyModal();
+            playSound('success');
+            addLog("Gemini API 키가 안전하게 로컬 저장소에 기입되었습니다.");
+        }
+
+        function removeAPIKey() {
+            GEMINI_API_KEY = '';
+            localStorage.removeItem('GEMINI_API_KEY');
+            updateAIStatusBtn();
+            toggleAPIKeyModal();
+            playSound('sad');
+            addLog("로컬 저장소의 API 키를 삭제하고 오프라인 클래식 모드로 전환했습니다.");
+        }
+
+        function updateAIStatusBtn() {
+            const btn = document.getElementById('ai-status-btn');
+            if (GEMINI_API_KEY) {
+                btn.innerHTML = '⚡ Gemini AI 활성화';
+                btn.className = "retro-font bg-pink-900/80 hover:bg-pink-800 text-pink-200 border border-pink-400 px-2.5 py-1 text-[11px] rounded-md transition-all";
+            } else {
+                btn.innerHTML = '🔑 Gemini AI 미설정';
+                btn.className = "retro-font bg-slate-800 hover:bg-slate-700 text-yellow-300 border border-yellow-500/30 px-2.5 py-1 text-[11px] rounded-md transition-all";
+            }
+        }
+
+        // Fetch wrapper utilizing Gemini model (with Canvas API key automatic fallback mechanism)
+        async function queryGemini(userPrompt, systemInstruction = "", responseSchema = null) {
+            const apiKey = GEMINI_API_KEY; // Leave empty if not provided by user, the Canvas will provide it
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userPrompt }] }]
+            };
+
+            if (systemInstruction) {
+                payload.systemInstruction = {
+                    parts: [{ text: systemInstruction }]
+                };
+            }
+
+            if (responseSchema) {
+                payload.generationConfig = {
+                    responseMimeType: "application/json",
+                    responseSchema: responseSchema
+                };
+            }
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    throw new Error("Gemini API Error Status: " + response.status);
+                }
+
+                const result = await response.json();
+                const textOutput = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!textOutput) {
+                    throw new Error("No output found in candidates block");
+                }
+                return textOutput;
+            } catch (error) {
+                console.error("Gemini API query failed:", error);
+                throw error;
+            }
+        }
+    </script>
+
+
+    <!-- GAME STATE & LOGIC -->
+    <script>
+        let player = {
+            name: "이유림",
+            groupName: "루미나",
+            vocal: 15,
+            dance: 12,
+            visual: 18,
+            fans: 120,
+            funds: 50, // ten thousand won
+            stress: 10,
+            day: 1,
+            week: 1,
+            romance: {
+                'ch-1': 10, // 한도진 (츤데레 리더)
+                'ch-2': 15, // 강하온 (댕댕이 메인보컬)
+                'ch-3': 0,  // 서은우 (라이벌 센터)
+                'ch-4': 5   // 민재현 (안경 매니저)
+            }
+        };
+
+        const CHAR_NAMES = {
+            'player': '주인공',
+            'ch-1': '한도진',
+            'ch-2': '강하온',
+            'ch-3': '서은우',
+            'ch-4': '민재현'
+        };
+
+        // UI screens transition
+        function switchScreen(screenId) {
+            document.getElementById('screen-title').classList.add('hidden');
+            document.getElementById('screen-setup').classList.add('hidden');
+            document.getElementById('screen-dashboard').classList.add('hidden');
+            document.getElementById('screen-dialogue').classList.add('hidden');
+            document.getElementById('screen-ending').classList.add('hidden');
+            document.getElementById('screen-messenger').classList.add('hidden');
+
+            document.getElementById(screenId).classList.remove('hidden');
+
+            if (screenId === 'screen-title' || screenId === 'screen-setup' || screenId === 'screen-ending') {
+                document.getElementById('header-stats').classList.add('hidden');
+            } else {
+                document.getElementById('header-stats').classList.remove('hidden');
+            }
+
+            if (screenId === 'screen-dialogue') {
+                resizeStageCanvas();
+            }
+        }
+
+        window.onload = function() {
+            updateAIStatusBtn();
+            document.getElementById('preview-ch-1').innerHTML = getCharacterSVG('ch-1', 'neutral');
+            document.getElementById('preview-ch-2').innerHTML = getCharacterSVG('ch-2', 'smiling');
+            document.getElementById('preview-ch-3').innerHTML = getCharacterSVG('ch-3', 'neutral');
+            document.getElementById('preview-ch-4').innerHTML = getCharacterSVG('ch-4', 'smiling');
+            
+            document.getElementById('mute-btn').innerHTML = "🔈 소리 끔";
+            isMuted = true;
+        };
+
+        function showCharacterCreation() {
+            playSound('click');
+            switchScreen('screen-setup');
+            rollInitialStats();
+        }
+
+        function rollInitialStats() {
+            playSound('click');
+            player.vocal = Math.floor(Math.random() * 10) + 12;
+            player.dance = Math.floor(Math.random() * 10) + 10;
+            player.visual = Math.floor(Math.random() * 10) + 14;
+
+            document.getElementById('init-vocal').innerText = player.vocal;
+            document.getElementById('init-dance').innerText = player.dance;
+            document.getElementById('init-visual').innerText = player.visual;
+        }
+
+        function startGame() {
+            const pName = document.getElementById('player-name').value.trim();
+            const gName = document.getElementById('group-name').value.trim();
+            if (pName) player.name = pName;
+            if (gName) player.groupName = gName;
+
+            CHAR_NAMES['player'] = player.name;
+
+            isMuted = false;
+            document.getElementById('mute-btn').innerHTML = "🔊 소리 켬";
+            initAudio();
+            startBGM();
+            playSound('success');
+
+            // Set dashboard images
+            document.getElementById('dash-player-portrait').innerHTML = getCharacterSVG('player', 'neutral');
+            document.getElementById('dash-ch-1').innerHTML = getCharacterSVG('ch-1', 'neutral');
+            document.getElementById('dash-ch-2').innerHTML = getCharacterSVG('ch-2', 'neutral');
+            document.getElementById('dash-ch-3').innerHTML = getCharacterSVG('ch-3', 'neutral');
+            document.getElementById('dash-ch-4').innerHTML = getCharacterSVG('ch-4', 'neutral');
+            document.getElementById('dash-player-name').innerText = player.name;
+
+            // Trigger visual novel prologue
+            loadVisualNovelEvent('prologue');
+        }
+
+        function updateStatsUI() {
+            document.getElementById('stat-day').innerText = `Week ${player.week} (Day ${player.day})`;
+            document.getElementById('stat-fans').innerText = `${player.fans.toLocaleString()}명`;
+            document.getElementById('stat-funds').innerText = `${player.funds}만원`;
+            document.getElementById('stat-stress').innerText = `${player.stress}%`;
+
+            document.getElementById('val-vocal').innerText = player.vocal;
+            document.getElementById('val-dance').innerText = player.dance;
+            document.getElementById('val-visual').innerText = player.visual;
+
+            document.getElementById('bar-vocal').style.width = `${Math.min(player.vocal, 100)}%`;
+            document.getElementById('bar-dance').style.width = `${Math.min(player.dance, 100)}%`;
+            document.getElementById('bar-visual').style.width = `${Math.min(player.visual, 100)}%`;
+
+            document.getElementById('love-ch-1').innerText = `${player.romance['ch-1']}%`;
+            document.getElementById('bar-love-ch-1').style.width = `${Math.min(player.romance['ch-1'], 100)}%`;
+
+            document.getElementById('love-ch-2').innerText = `${player.romance['ch-2']}%`;
+            document.getElementById('bar-love-ch-2').style.width = `${Math.min(player.romance['ch-2'], 100)}%`;
+
+            document.getElementById('love-ch-3').innerText = `${player.romance['ch-3']}%`;
+            document.getElementById('bar-love-ch-3').style.width = `${Math.min(player.romance['ch-3'], 100)}%`;
+
+            document.getElementById('love-ch-4').innerText = `${player.romance['ch-4']}%`;
+            document.getElementById('bar-love-ch-4').style.width = `${Math.min(player.romance['ch-4'], 100)}%`;
+
+            document.getElementById('agenda-day-left').innerText = `남은 컴백 데드라인: ${35 - player.day}일`;
+            
+            if (player.stress >= 100) {
+                triggerEnding('stress_over');
+            }
+        }
+
+        function addLog(text) {
+            const logs = document.getElementById('game-logs');
+            const entry = document.createElement('div');
+            entry.innerHTML = `• ${text}`;
+            logs.appendChild(entry);
+            logs.scrollTop = logs.scrollHeight;
+        }
+    </script>
+
+
+    <!-- SMARTPHONE / MESSENGER ENGINE (LUMINA TALK) -->
+    <script>
+        let currentChatCharId = '';
+        let chatHistories = {
+            'ch-1': [],
+            'ch-2': [],
+            'ch-3': [],
+            'ch-4': []
+        };
+
+        const PERSONA_SYSTEM_INSTRUCTIONS = {
+            'ch-1': () => `너는 여성향 모바일 게임 '망돌로 살아남기'의 메인 공략 캐릭터 '한도진'(22세, 은발 청안, LUMINA의 츤데레 리더)이다. 대화 상대는 멤버인 주인공 ${player.name}이다. 도진의 성격: 겉으로는 퉁명스럽고 냉정하게 말하지만 속으로는 주인공을 매우 걱정하고 아낀다(츤데레). 문장은 짧고 건조하면서도 수줍음이나 질투를 은연중에 비쳐야 한다. 존댓말 대신 친근하고 새침한 '반말'을 써라. 너와 주인공의 현재 게임 내 호감도는 ${player.romance['ch-1']}%이다.`,
+            'ch-2': () => `너는 여성향 게임 '망돌로 살아남기'의 메인 공략 캐릭터 '강하온'(20세, 금발 벽안, LUMINA의 활기찬 댕댕이 메인보컬)이다. 하온은 주인공 ${player.name}을 누나(또는 언니)라고 극진히 부르며, 강아지처럼 어리광부리고 칭찬받고 싶어 한다. 성격: 쾌활, 애교, 긍정, 따뜻함. 말투는 반말과 존댓말이 귀엽게 혼용되나 기본적으로 '누나(언니)'를 엄청 좋아하여 존칭을 부드럽게 쓴다. 하트와 물음표 이모티콘을 애용해라. 호감도는 ${player.romance['ch-2']}%이다.`,
+            'ch-3': () => `너는 여성향 게임 '망돌로 살아남기'의 라이벌 공략 캐릭터 '서은우'(21세, 흑발 자안, 경쟁 1위 그룹 AURA의 매혹적인 센터)이다. 은우는 위험하면서도 치명적이고 유혹적인 성격을 가지고 있다. 주인공 ${player.name}에게 다른 회사로 이적해 볼 생각 없냐며 플러팅하고 떠보지만 진심으로 호기심을 갖고 다가간다. 말투는 나른하고 자신감 넘치는 '반말'이며, 묘하게 주인공을 지배하거나 설레게 하는 어투다. 호감도는 ${player.romance['ch-3']}%이다.`,
+            'ch-4': () => `너는 여성향 게임 '망돌로 살아남기'의 듬직한 조력자 캐릭터 '민재현'(25세, 갈색 머리, 안경, 밤샘 근무하는 성실하고 다정한 매니저)이다. 주인공 ${player.name}의 모든 희로애락을 지지하며, 주인공이 혹여나 상처받을까 늘 뒤에서 지탱해 준다. 차분하고 따뜻한 성격이며 어른스럽다. 말투는 아주 예의 바르고 존중하는 '존댓말'을 쓴다. 호감도는 ${player.romance['ch-4']}%이다.`
+        };
+
+        function openMessenger(charId) {
+            playSound('click');
+            currentChatCharId = charId;
+            switchScreen('screen-messenger');
+            
+            document.getElementById('chat-ch-name').innerText = CHAR_NAMES[charId];
+            document.getElementById('chat-ch-avatar').innerHTML = getCharacterSVG(charId, 'smiling');
+            document.getElementById('chat-ch-affinity').innerText = `호감도: ${player.romance[charId]}%`;
+
+            // Initial messages load
+            const msgBox = document.getElementById('chat-messages-box');
+            msgBox.innerHTML = '';
+
+            // If empty history, push intro message
+            if (chatHistories[charId].length === 0) {
+                let initialText = "";
+                if (charId === 'ch-1') initialText = `"야. 안 자고 뭐해? 연습 안 끝났으면 방해하지 말고 얼른 눈 좀 붙여라. 피곤해 보여서... 말해주는 거야."`;
+                else if (charId === 'ch-2') initialText = `"누나아! 오늘 스케줄 너무너무 고생하셨어요! ㅎㅎ 제 노래 연습하는 거 들으셨어요? 귀엽게 봐주세요! 💕"`;
+                else if (charId === 'ch-3') initialText = `"망해가는 '루미나'의 에이스 유림아. 혹시 내 생각 하면서 밤새우고 있는 건 아니지? 재미없네..."`;
+                else if (charId === 'ch-4') initialText = `"${player.name}님, 힘든 스케줄 소화하시느라 참 고생이 많으십니다. 야식 준비해 뒀으니 언제든 사무실로 와 주세요."`;
+
+                chatHistories[charId].push({ sender: 'char', text: initialText });
+            }
+
+            chatHistories[charId].forEach(msg => {
+                appendChatBubble(msg.sender, msg.text);
+            });
+        }
+
+        function closeMessengerUI() {
+            playSound('click');
+            switchScreen('screen-dashboard');
+            updateStatsUI();
+        }
+
+        function appendChatBubble(sender, text) {
+            const box = document.getElementById('chat-messages-box');
+            const bubble = document.createElement('div');
+            
+            if (sender === 'user') {
+                bubble.className = "self-end bg-pink-600 text-white rounded-br-none rounded-2xl px-3 py-2 max-w-[80%] text-[11px] leading-relaxed break-words shadow";
+                bubble.innerText = text;
+            } else {
+                bubble.className = "self-start bg-slate-900 border border-purple-500/25 text-slate-100 rounded-bl-none rounded-2xl px-3 py-2 max-w-[80%] text-[11px] leading-relaxed break-words shadow";
+                bubble.innerText = text;
+            }
+            box.appendChild(bubble);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chat-user-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            playSound('click');
+            input.value = '';
+            
+            // Append player bubble
+            appendChatBubble('user', text);
+            chatHistories[currentChatCharId].push({ sender: 'user', text: text });
+
+            const isAIActive = document.getElementById('ai-toggle-checkbox').checked;
+
+            if (isAIActive) {
+                document.getElementById('chat-loader').classList.remove('hidden');
+                
+                // Formulate Prompt
+                const systemPrompt = PERSONA_SYSTEM_INSTRUCTIONS[currentChatCharId]();
+                const conversationContext = chatHistories[currentChatCharId]
+                    .slice(-6) // Send recent context only
+                    .map(m => (m.sender === 'user' ? `${player.name}: ` : `${CHAR_NAMES[currentChatCharId]}: `) + m.text)
+                    .join("\n");
+
+                try {
+                    const aiResponse = await queryGemini(
+                        conversationContext, 
+                        systemPrompt + "\n한 개의 메시지만 보내라. 상대방이 실시간 카카오톡이나 DM 메시지 답장을 받은 것처럼 단답이나 1~2줄 분량의 말로 응답할 것."
+                    );
+                    
+                    document.getElementById('chat-loader').classList.add('hidden');
+                    
+                    // Increment love slightly based on talking!
+                    if (Math.random() < 0.4) {
+                        player.romance[currentChatCharId] = Math.min(player.romance[currentChatCharId] + 1, 100);
+                        document.getElementById('chat-ch-affinity').innerText = `호감도: ${player.romance[currentChatCharId]}%`;
+                    }
+                    
+                    playSound('blush');
+                    appendChatBubble('char', aiResponse);
+                    chatHistories[currentChatCharId].push({ sender: 'char', text: aiResponse });
+                } catch (err) {
+                    document.getElementById('chat-loader').classList.add('hidden');
+                    // Fallback Offline response
+                    triggerFallbackChatResponse();
+                }
+            } else {
+                triggerFallbackChatResponse();
+            }
+        }
+
+        function triggerFallbackChatResponse() {
+            setTimeout(() => {
+                let fallback = "... (부끄러운지 말문이 막혔거나, 핸드폰 배터리가 꺼진 것 같다!)";
+                if (currentChatCharId === 'ch-1') fallback = `"어, 어... 나중에 답할게. 연습하느라 바빠!"`;
+                else if (currentChatCharId === 'ch-2') fallback = `"우와, 누나! 진짜 좋은 말씀이에요! 힘이 불끈불끈 솟아나요! 헤헤 💛"`;
+                else if (currentChatCharId === 'ch-3') fallback = `"귀엽네... 네가 그렇게 날 찾을 줄 몰랐는걸. 또 만나자."`;
+                else if (currentChatCharId === 'ch-4') fallback = `"답장이 늦어 죄송합니다. 사무 보느라 바빴네요. 늘 응원하고 있습니다."`;
+
+                appendChatBubble('char', fallback);
+                chatHistories[currentChatCharId].push({ sender: 'char', text: fallback });
+                playSound('blush');
+            }, 800);
+        }
+    </script>
+
+
+    <!-- VISUAL NOVEL & STORY SYSTEM (AI DYNAMIC EVENT INCLUDED) -->
+    <script>
+        const STORY_OFFLINE_SCRIPTS = {
+            'prologue': [
+                {
+                    speaker: 'narrator',
+                    text: `연습생 시절을 거쳐 화려하게 데뷔했던 Lumina. 하지만 현실은 악플과 차트 아웃의 혹독함뿐이었다.`,
+                    bg: 'linear-gradient(to bottom, #090514, #1e1b4b)',
+                    location: '소속사 낡은 회의실'
+                },
+                {
+                    speaker: 'ch-4',
+                    expression: 'sad',
+                    text: `"${player.name}님... 그리고 멤버 여러분. 정말 죄송하게 됐습니다. 대표님께서 마지막 경고를 날리셨어요..."`,
+                    location: '소속사 낡은 회의실'
+                },
+                {
+                    speaker: 'ch-1',
+                    expression: 'sad',
+                    text: `"재현 형, 진짜 우리 해체 각 서는 거야? 아직 제대로 공중파 한번 타보지도 못했잖아!"`,
+                    location: '소속사 낡은 회의실'
+                },
+                {
+                    speaker: 'ch-4',
+                    expression: 'sad',
+                    text: `"앞으로 단 5주일... 그 이후 대형 연합 쇼케이스 무대에서 현장 팬 투표 '15,000명'을 넘기지 못하면, 루미나는 완전히 지상에서 소멸될 겁니다."`,
+                    location: '소속사 낡은 회의실'
+                },
+                {
+                    speaker: 'ch-2',
+                    expression: 'sad',
+                    text: `"1만 5천 명이라니요?! 지금 공식 팬클럽 다 모아봐야 단 120명인데...!"`,
+                    location: '소속사 낡은 회의실',
+                    effect: 'shake'
+                },
+                {
+                    speaker: 'player',
+                    expression: 'neutral',
+                    text: `(눈앞이 깜캄하지만, 이대로 내 꿈을 매몰시킬 순 없다. 내가 발로 직접 뛰어서라도 Lumina를 최정상 은하계 가요계 스타로 만들고 말겠어!)`,
+                    location: '소속사 낡은 회의실'
+                },
+                {
+                    speaker: 'ch-1',
+                    expression: 'blushing',
+                    text: `"참나, 네 녀석 눈빛 하나는 매섭네. ...흥, 리더인 내가 겁먹고 숨어 있을 순 없지. 끝까지 가보자고, 이유림."`,
+                    location: '소속사 낡은 회의실'
+                },
+                {
+                    speaker: 'ch-2',
+                    expression: 'smiling',
+                    text: `"누나만 믿을게요! 저도 보컬에 영혼을 전부 갈아 넣겠어요! 파이팅!"`,
+                    location: '소속사 낡은 회의실',
+                    effect: 'star'
+                },
+                {
+                    speaker: 'ch-4',
+                    expression: 'smiling',
+                    text: `"좋습니다... 매니저인 저도 밤을 지새워서라도 투자금 유치와 오디션을 가로채오겠습니다. 우리, 같이 시작해요."`,
+                    location: '소속사 낡은 회의실'
+                },
+                {
+                    speaker: 'narrator',
+                    text: `망돌 탈출을 위한 눈물겨운 5주일의 서바이벌이 기지개를 켰다!`,
+                    choices: [
+                        {
+                            text: "좋아, 본격적으로 컴백 스케줄을 실행하자!",
+                            effect: () => {
+                                playSound('success');
+                                switchScreen('screen-dashboard');
+                                updateStatsUI();
+                            }
+                        }
+                    ]
+                }
+            ],
+            'sns-crisis': [
+                {
+                    speaker: 'narrator',
+                    text: `Lumina의 연습 동영상이 SNS 릴스에서 역주행 조짐을 보이고 있을 때, 경쟁 대형 기획사발 악의적인 해킹 및 과거 논란 조작 사건이 발생했다.`,
+                    location: '인터넷 익명게시판'
+                },
+                {
+                    speaker: 'ch-1',
+                    expression: 'sad',
+                    text: `"뭐? 춤 연습할 때 태도가 불량했다니? 연습실 불 한 번 안 끄고 살았는데 억울해 죽겠네!"`,
+                    location: '소속사 로비',
+                    effect: 'shake'
+                },
+                {
+                    speaker: 'ch-4',
+                    expression: 'sad',
+                    text: `"소규모 기획사의 한계입니다. 악성 루머를 즉각 조처하지 않으면 유입되기 시작한 팬들이 순식간에 떨어져 나갈 거예요."`,
+                    location: '소속사 로비'
+                },
+                {
+                    speaker: 'ch-2',
+                    expression: 'sad',
+                    text: `"우릴 싫어하는 사람들이 자꾸 이상한 소문을 댓글로 달고 있어요... 눈물 나..."`,
+                    location: '소속사 로비'
+                },
+                {
+                    speaker: 'player',
+                    expression: 'neutral',
+                    text: `(침착하자. 진실은 무기다. 정면 돌파를 감행할 방법을 결정해야 한다.)`,
+                    choices: [
+                        {
+                            text: "화장기 없는 민낯과 소형 앰프로 쌩라이브 소통 방송을 켠다 (보컬 +10, 팬덤 +2,000명, 스트레스 +15)",
+                            effect: () => {
+                                player.vocal += 10;
+                                player.fans += 2000;
+                                player.stress += 15;
+                                addLog("실시간 쌩목 라이브 대성공! 쩌렁쩌렁한 고음으로 악성 루머들을 일격에 침묵시키고 진성 팬들을 유입시켰습니다!");
+                                playSound('success');
+                            }
+                        },
+                        {
+                            text: "치명적인 라이벌 은우에게 은밀한 조언 및 업계 대처 조력을 구한다 (은우 호감도 +25, 팬덤 +2,500명)",
+                            effect: () => {
+                                player.romance['ch-3'] += 25;
+                                player.fans += 2500;
+                                addLog("은우가 자신의 거물 소속사 변호사 명의를 몰래 빌려주며 신속한 반박문을 배포했습니다! 기사의 흐름을 완벽히 비틀었습니다.");
+                                playSound('success');
+                            }
+                        }
+                    ]
+                }
+            ],
+            'final-showcase': [
+                {
+                    speaker: 'narrator',
+                    text: `드디어 약속한 5주일(35일)의 밤들이 가고, 초대형 주경기장 연합 쇼케이스 날의 화려한 미러볼 아래 모였다.`,
+                    location: '쇼케이스 메인 무대 뒤편'
+                },
+                {
+                    speaker: 'ch-4',
+                    expression: 'smiling',
+                    text: `"여러분, 객석 끝까지 Lumina의 빛이 보여요... 이 날을 위해 눈물을 흩뿌렸군요."`,
+                    location: '쇼케이스 메인 무대 뒤편'
+                },
+                {
+                    speaker: 'ch-2',
+                    expression: 'smiling',
+                    text: `"누나(언니)와 같이 섰던 길거리 버스킹의 기운이 온몸에 휘돌고 있어요! 최고로 빛날 준비가 됐어요!"`,
+                    location: '쇼케이스 메인 무대 뒤편',
+                    effect: 'star'
+                },
+                {
+                    speaker: 'ch-1',
+                    expression: 'blushing',
+                    text: `"이유림. 무대 끝나고 나한테 도망치지 말고 붙잡혀 있어라. 너한테 진지하게 고백할 거니까... 딴 놈 바라보지 말고 나만 봐."`,
+                    location: '쇼케이스 메인 무대 뒤편',
+                    effect: 'heart'
+                },
+                {
+                    speaker: 'ch-3',
+                    expression: 'smiling',
+                    text: `"훗, 루미나의 무대를 VIP석 일렬에서 눈 떼지 않고 영원히 박제해 주지. 내 기획사로 올 마지막 기회는 오늘 무대로 증명해 봐."`,
+                    location: '쇼케이스 통로'
+                },
+                {
+                    speaker: 'player',
+                    expression: 'smiling',
+                    text: `"Lumina, 가자! 세상의 저주를 딛고 가장 찬란한 유성우가 되는 거야!"`,
+                    choices: [
+                        {
+                            text: "관객의 환호 속으로 도약한다! (결과 산출) 🚀",
+                            effect: () => {
+                                calculateEnding();
+                            }
+                        }
+                    ]
+                }
+            ]
+        };
+
+        let activeVNKey = '';
+        let activeVNSlideIdx = 0;
+        let aiGeneratedEventSlide = null; // Storing Gemini-generated dynamic event
+
+        function loadVisualNovelEvent(eventKey) {
+            activeVNKey = eventKey;
+            activeVNSlideIdx = 0;
+            aiGeneratedEventSlide = null;
+            switchScreen('screen-dialogue');
+            renderVNSlide();
+        }
+
+        // Gemini JSON schema for Dynamic Events
+        const EVENT_JSON_SCHEMA = {
+            type: "OBJECT",
+            properties: {
+                location: { type: "STRING" },
+                speakerId: { type: "STRING", description: "Who interacts? ch-1, ch-2, ch-3, or ch-4" },
+                expression: { type: "STRING", description: "facial expression: neutral, smiling, blushing, sad, surprised" },
+                dialogueText: { type: "STRING", description: "Detailed narrative in Korean. A sweet or dramatic scene involving the player and the speaker (2-3 sentences max)." },
+                choice1: {
+                    type: "OBJECT",
+                    properties: {
+                        text: { type: "STRING", description: "Korean choice button text" },
+                        consequenceText: { type: "STRING", description: "Explanation of what happened when chosen" },
+                        vocalDelta: { type: "NUMBER" },
+                        danceDelta: { type: "NUMBER" },
+                        visualDelta: { type: "NUMBER" },
+                        romanceDelta: { type: "NUMBER", description: "Aura/affection shift" },
+                        stressDelta: { type: "NUMBER" },
+                        fansDelta: { type: "NUMBER" }
+                    },
+                    required: ["text", "consequenceText", "vocalDelta", "danceDelta", "visualDelta", "romanceDelta", "stressDelta", "fansDelta"]
+                },
+                choice2: {
+                    type: "OBJECT",
+                    properties: {
+                        text: { type: "STRING", description: "Korean choice button text" },
+                        consequenceText: { type: "STRING", description: "Explanation of what happened when chosen" },
+                        vocalDelta: { type: "NUMBER" },
+                        danceDelta: { type: "NUMBER" },
+                        visualDelta: { type: "NUMBER" },
+                        romanceDelta: { type: "NUMBER" },
+                        stressDelta: { type: "NUMBER" },
+                        fansDelta: { type: "NUMBER" }
+                    },
+                    required: ["text", "consequenceText", "vocalDelta", "danceDelta", "visualDelta", "romanceDelta", "stressDelta", "fansDelta"]
+                }
+            },
+            required: ["location", "speakerId", "expression", "dialogueText", "choice1", "choice2"]
+        };
+
+        // Trigger AI schedule dynamic scene generator
+        async function triggerAIDynamicEvent(scheduleType) {
+            switchScreen('screen-dialogue');
+            const loader = document.getElementById('ai-loading');
+            loader.classList.remove('hidden');
+
+            const randomBoyId = ['ch-1', 'ch-2', 'ch-3', 'ch-4'][Math.floor(Math.random() * 4)];
+            const boyName = CHAR_NAMES[randomBoyId];
+
+            const userPrompt = `
+                여성향 연애/아이돌 육성 시뮬레이션 게임 '망돌로 살아남기'의 신규 스케줄 이벤트 생성입니다.
+                - 주인공 이름: ${player.name}
+                - 아이돌 그룹명: ${player.groupName}
+                - 공략 상대방 캐릭터: ${boyName} (${randomBoyId === 'ch-1' ? '은빛 머리 츤데레 리더' : randomBoyId === 'ch-2' ? '금발 애교 댕댕이 메인보컬' : randomBoyId === 'ch-3' ? '흑발 퇴폐적 라이벌 센터' : '다정하고 든든한 안경 매니저'})
+                - 현재 주인공의 오늘의 활동: ${scheduleType} (vocal: 보컬실, dance: 연습실, visual: 메이크업숍, busking: 길거리 버스킹, job: 편의점 아르바이트, rest: 숙소 휴식)
+                - 현재 주인공 스탯: 보컬 ${player.vocal}, 댄스 ${player.dance}, 비주얼 ${player.visual}, 스트레스 ${player.stress}%
+                - 타깃 캐릭터와의 호감도: ${player.romance[randomBoyId]}%
+
+                오늘 활동 중 ${boyName}와 예기치 못하게 부딪혀 설레거나 미묘한 긴장감이 흐르는 심쿵 로맨스 훈련 서사를 2~3줄 분량으로 창작하세요. 한글로 작성해야 합니다.
+                그 후 주인공의 리액션에 따른 매력적인 선택지 2개를 제공하고, 그에 상응하는 실질적인 스탯 변화량(마이너스값 포함)을 지정하십시오.
+            `;
+
+            try {
+                const aiRawJson = await queryGemini(userPrompt, "너는 한국에서 매우 유명한 로맨스 여성향 게임 전문 시나리오 작가다. 설레는 묘사를 탁월하게 구사해라.", EVENT_JSON_SCHEMA);
+                const eventData = JSON.parse(aiRawJson);
+
+                aiGeneratedEventSlide = eventData;
+                loader.classList.add('hidden');
+                renderVNSlide();
+            } catch (err) {
+                console.error("AI Event Generation Failed. Falling back to offline events...", err);
+                loader.classList.add('hidden');
+                // Offline fallback based on activity
+                triggerOfflineFallbackVNEvent(scheduleType);
+            }
+        }
+
+        function triggerOfflineFallbackVNEvent(scheduleType) {
+            const boyId = ['ch-1', 'ch-2', 'ch-3', 'ch-4'][Math.floor(Math.random() * 4)];
+            const boyName = CHAR_NAMES[boyId];
+
+            let text = `${boyName}와(과) 함께 힘찬 하루 일정을 완수했습니다. 무심결에 건네준 포카리스웨트 음료수로 고된 피로를 잊어갑니다.`;
+            let choice1Text = `무대 연습에 대해 세밀한 요령을 배운다 (춤/보컬 실력 향상)`;
+            let choice2Text = `따뜻한 격려를 공유하며 호감을 높인다 (호감도 대폭 상승)`;
+
+            aiGeneratedEventSlide = {
+                location: "연습실",
+                speakerId: boyId,
+                expression: "smiling",
+                dialogueText: text,
+                choice1: {
+                    text: choice1Text,
+                    consequenceText: "열심히 공부하여 기본 스탯이 한층 더 견고해졌습니다!",
+                    vocalDelta: 3, danceDelta: 3, visualDelta: 0, romanceDelta: 5, stressDelta: 5, fansDelta: 100
+                },
+                choice2: {
+                    text: choice2Text,
+                    consequenceText: "둘 사이의 거리가 소복소복 메워지기 시작합니다.",
+                    vocalDelta: 0, danceDelta: 0, visualDelta: 3, romanceDelta: 15, stressDelta: -10, fansDelta: 0
+                }
+            };
+            renderVNSlide();
+        }
+
+        function renderVNSlide() {
+            // Check if dynamic event
+            if (aiGeneratedEventSlide) {
+                renderDynamicAIEvent(aiGeneratedEventSlide);
+                return;
+            }
+
+            const event = STORY_OFFLINE_SCRIPTS[activeVNKey];
+            const slide = event[activeVNSlideIdx];
+
+            const stage = document.getElementById('dialogue-stage');
+            if (slide.bg) {
+                stage.style.background = slide.bg;
+            } else {
+                stage.style.background = 'linear-gradient(to bottom, #0b071e, #1e1b4b)';
+            }
+            
+            document.getElementById('sc-location').innerText = `📍 ${slide.location || '소속사 아지트'}`;
+            document.getElementById('sc-chapter').innerText = getChapterTitle(activeVNKey);
+
+            const speakerContainer = document.getElementById('speaker-container');
+            if (slide.speaker === 'narrator') {
+                speakerContainer.innerHTML = '';
+                document.getElementById('speaker-nametag').innerText = '지문';
+                document.getElementById('speaker-nametag').className = "absolute -top-3.5 left-5 bg-slate-700 border border-white text-white px-3 py-0.5 retro-font text-xs font-bold rounded";
+            } else {
+                speakerContainer.innerHTML = getCharacterSVG(slide.speaker, slide.expression || 'neutral');
+                document.getElementById('speaker-nametag').innerText = CHAR_NAMES[slide.speaker] || '??';
+                
+                let colorClass = "bg-pink-600";
+                if (slide.speaker === 'ch-1') colorClass = "bg-cyan-600";
+                if (slide.speaker === 'ch-2') colorClass = "bg-yellow-600";
+                if (slide.speaker === 'ch-3') colorClass = "bg-indigo-600";
+                if (slide.speaker === 'ch-4') colorClass = "bg-slate-600";
+                document.getElementById('speaker-nametag').className = `absolute -top-3.5 left-5 ${colorClass} border border-white text-white px-3 py-0.5 retro-font text-xs font-bold rounded`;
+            }
+
+            const textEl = document.getElementById('speaker-text');
+            textEl.innerHTML = '';
+            let charIdx = 0;
+            const fullText = slide.text;
+            
+            if (window.typingInterval) clearInterval(window.typingInterval);
+            
+            window.typingInterval = setInterval(() => {
+                if (charIdx < fullText.length) {
+                    textEl.innerHTML += fullText.charAt(charIdx);
+                    charIdx++;
+                    if (charIdx % 3 === 0) playSound('click');
+                } else {
+                    clearInterval(window.typingInterval);
+                }
+            }, 25);
+
+            const stageBox = document.getElementById('screen-dialogue');
+            stageBox.classList.remove('shake-effect');
+            if (slide.effect === 'shake') {
+                setTimeout(() => stageBox.classList.add('shake-effect'), 50);
+                playSound('sad');
+            } else if (slide.effect === 'heart') {
+                triggerCanvasParticles('heart');
+                playSound('blush');
+            } else if (slide.effect === 'star') {
+                triggerCanvasParticles('star');
+                playSound('success');
+            }
+
+            const choiceContainer = document.getElementById('choice-container');
+            const nextIndicator = document.getElementById('next-indicator');
+
+            if (slide.choices) {
+                nextIndicator.classList.add('hidden');
+                choiceContainer.innerHTML = '';
+                choiceContainer.classList.remove('hidden');
+
+                slide.choices.forEach(choice => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full text-left bg-slate-950 hover:bg-pink-950/40 border-2 border-purple-500/40 hover:border-pink-500 text-slate-100 p-2.5 rounded-xl transition-all duration-300 text-xs font-bold shadow-lg";
+                    btn.innerHTML = choice.text;
+                    btn.onclick = () => {
+                        playSound('success');
+                        choice.effect();
+                        if (activeVNKey !== 'final-showcase') {
+                            switchScreen('screen-dashboard');
+                            updateStatsUI();
+                        }
+                    };
+                    choiceContainer.appendChild(btn);
+                });
+            } else {
+                choiceContainer.classList.add('hidden');
+                nextIndicator.classList.remove('hidden');
+            }
+        }
+
+        // Dedicated renderer for Gemini AI structured dynamic scenarios
+        function renderDynamicAIEvent(data) {
+            document.getElementById('sc-location').innerText = `📍 AI 생성구역: ${data.location}`;
+            document.getElementById('sc-chapter').innerText = `🏆 AI 돌발 에피소드`;
+
+            const speakerContainer = document.getElementById('speaker-container');
+            speakerContainer.innerHTML = getCharacterSVG(data.speakerId, data.expression || 'neutral');
+            
+            document.getElementById('speaker-nametag').innerText = CHAR_NAMES[data.speakerId];
+            let colorClass = "bg-pink-600";
+            if (data.speakerId === 'ch-1') colorClass = "bg-cyan-600";
+            if (data.speakerId === 'ch-2') colorClass = "bg-yellow-600";
+            if (data.speakerId === 'ch-3') colorClass = "bg-indigo-600";
+            if (data.speakerId === 'ch-4') colorClass = "bg-slate-600";
+            document.getElementById('speaker-nametag').className = `absolute -top-3.5 left-5 ${colorClass} border border-white text-white px-3 py-0.5 retro-font text-xs font-bold rounded`;
+
+            const textEl = document.getElementById('speaker-text');
+            textEl.innerHTML = '';
+            let charIdx = 0;
+            const fullText = data.dialogueText;
+            
+            if (window.typingInterval) clearInterval(window.typingInterval);
+            window.typingInterval = setInterval(() => {
+                if (charIdx < fullText.length) {
+                    textEl.innerHTML += fullText.charAt(charIdx);
+                    charIdx++;
+                    if (charIdx % 3 === 0) playSound('click');
+                } else {
+                    clearInterval(window.typingInterval);
+                }
+            }, 25);
+
+            if (data.expression === 'blushing') {
+                triggerCanvasParticles('heart');
+                playSound('blush');
+            } else {
+                triggerCanvasParticles('star');
+                playSound('success');
+            }
+
+            const choiceContainer = document.getElementById('choice-container');
+            const nextIndicator = document.getElementById('next-indicator');
+
+            nextIndicator.classList.add('hidden');
+            choiceContainer.innerHTML = '';
+            choiceContainer.classList.remove('hidden');
+
+            // Set buttons for Choice 1 & Choice 2
+            [data.choice1, data.choice2].forEach((choiceObj, index) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left bg-slate-950 hover:bg-pink-950/40 border-2 border-purple-500/40 hover:border-pink-500 text-slate-100 p-2.5 rounded-xl transition-all duration-300 text-xs font-bold shadow-lg";
+                btn.innerHTML = `${index + 1}. ${choiceObj.text}`;
+                
+                btn.onclick = () => {
+                    playSound('success');
+                    
+                    // Apply deltas
+                    player.vocal += (choiceObj.vocalDelta || 0);
+                    player.dance += (choiceObj.danceDelta || 0);
+                    player.visual += (choiceObj.visualDelta || 0);
+                    player.romance[data.speakerId] += (choiceObj.romanceDelta || 0);
+                    player.stress = Math.max(0, player.stress + (choiceObj.stressDelta || 0));
+                    player.fans = Math.max(0, player.fans + (choiceObj.fansDelta || 0));
+
+                    addLog(choiceObj.consequenceText + ` (호감도 +${choiceObj.romanceDelta || 0})`);
+                    
+                    switchScreen('screen-dashboard');
+                    updateStatsUI();
+                };
+                choiceContainer.appendChild(btn);
+            });
+        }
+
+        // Dialogue next slide click listener
+        document.getElementById('screen-dialogue').onclick = function(e) {
+            if (aiGeneratedEventSlide) return; // Prevent next slide since choice screen is mandatory
+            
+            const event = STORY_OFFLINE_SCRIPTS[activeVNKey];
+            const slide = event[activeVNSlideIdx];
+            if (slide.choices) return;
+
+            if (activeVNSlideIdx < event.length - 1) {
+                activeVNSlideIdx++;
+                renderVNSlide();
+            }
+        };
+
+        function getChapterTitle(key) {
+            if (key === 'prologue') return 'Chapter 0. 비참한 출발';
+            if (key === 'sns-crisis') return 'Chapter 2. 악마의 위기 돌파';
+            if (key === 'final-showcase') return 'Chapter 5. 영광의 밤';
+            return 'LUMINA 기획사 에피소드';
+        }
+    </script>
+
+
+    <!-- TRAINING & DAILY ACTIVITIES SCHEDULER -->
+    <script>
+        async function performSchedule(type) {
+            playSound('click');
+            
+            let logMsg = "";
+            let randomEvent = false;
+
+            // Stats alteration
+            if (type === 'vocal') {
+                player.vocal += 5;
+                player.stress += 10;
+                logMsg = "보컬실의 방음 패드가 닳을 정도로 목소리를 가다듬었습니다! (보컬 +5, 스트레스 +10)";
+                playSound('stat_up');
+            } else if (type === 'dance') {
+                player.dance += 5;
+                player.stress += 12;
+                logMsg = "연습실 전면 거울에 수증기가 맺힐 때까지 안무 맹훈련을 했습니다! (안무 +5, 스트레스 +12)";
+                playSound('stat_up');
+            } else if (type === 'visual') {
+                player.visual += 5;
+                player.stress += 8;
+                logMsg = "카메라 무대 시선처리 및 미용 마스크 팩 관리를 마쳤습니다. (비주얼 +5, 스트레스 +8)";
+                playSound('stat_up');
+            } else if (type === 'busking') {
+                let calculatedGain = Math.floor((player.vocal + player.dance + player.visual) * (Math.random() * 0.9 + 0.6));
+                player.fans += calculatedGain;
+                player.stress += 15;
+                logMsg = `홍대 인파 속에서 열정적으로 버스킹을 마쳐 소중한 팬 ${calculatedGain}명을 입덕시켰습니다! (팬 유입, 스트레스 +15)`;
+                playSound('success');
+            } else if (type === 'job') {
+                player.funds += 15;
+                player.stress += 15;
+                logMsg = "지친 몸을 이끌고 컵라면 재고를 충전하며 컴백 투자 자금 15만원을 모았습니다. (자금 +15, 스트레스 +15)";
+                playSound('stat_up');
+            } else if (type === 'rest') {
+                player.stress = Math.max(player.stress - 25, 0);
+                logMsg = "걱정과 시름을 내려놓고 침대 속에서 푹 잤습니다. (스트레스 -25% 회복)";
+                playSound('success');
+            }
+
+            addLog(logMsg);
+            player.day++;
+            player.week = Math.ceil(player.day / 7);
+
+            // Trigger AI schedule dynamic scene generator (40% chance of random encounter on any day)
+            const isAIActive = document.getElementById('ai-toggle-checkbox').checked;
+            
+            if (player.day < 35 && Math.random() < 0.45) {
+                if (isAIActive) {
+                    await triggerAIDynamicEvent(type);
+                } else {
+                    triggerOfflineFallbackVNEvent(type);
+                }
+                randomEvent = true;
+            }
+
+            // Fixed core milestones
+            if (!randomEvent) {
+                if (player.day === 15) {
+                    loadVisualNovelEvent('sns-crisis');
+                    randomEvent = true;
+                } else if (player.day >= 35) {
+                    loadVisualNovelEvent('final-showcase');
+                    randomEvent = true;
+                }
+            }
+
+            updateStatsUI();
+        }
+    </script>
+
+
+    <!-- ENDING GRAPH & REWARD LOGIC -->
+    <script>
+        async function calculateEnding() {
+            switchScreen('screen-ending');
+            
+            // Analyze the highest romance
+            let highestAff = -1;
+            let loverId = null;
+            for (const [char, val] of Object.entries(player.romance)) {
+                if (val > highestAff) {
+                    highestAff = val;
+                    loverId = char;
+                }
+            }
+
+            const endingTitleEl = document.getElementById('ending-title');
+            const endingDescEl = document.getElementById('ending-desc');
+            const endingPortrait = document.getElementById('ending-portrait');
+
+            endingPortrait.innerHTML = getCharacterSVG(loverId, 'blushing');
+
+            // Offline backup text generator
+            let offlineEndingTitle = "";
+            let offlineEndingDesc = "";
+
+            if (player.fans < 15000) {
+                offlineEndingTitle = "🛑 못다 핀 불꽃 (Lumina 계약 파기 엔딩)";
+                offlineEndingDesc = `
+                    체조경기장 연합 쇼케이스에서 Lumina의 총 현장 득표수는 목표량인 15,000명에 도달하지 못한 <span class="text-red-400 font-bold">${player.fans.toLocaleString()}명</span>이었습니다.<br><br>
+                    대중의 거대한 벽을 넘지 못하고 Lumina는 역사 속으로 쓸쓸히 자취를 감추게 되었습니다. 곁에서 슬피 보며 손을 잡아준 ${CHAR_NAMES[loverId]}와의 가슴 아픈 연인 서사만이 평생의 보물이 되어 일상의 한편으로 퇴근합니다.
+                `;
+                endingTitleEl.className = "retro-font text-xl md:text-2xl font-extrabold text-red-500";
+            } else if (player.fans >= 15000 && highestAff >= 50) {
+                offlineEndingTitle = `👑 전세계의 중심 & 【${CHAR_NAMES[loverId]}】 메인 해피 엔딩!`;
+                offlineEndingDesc = `
+                    완전한 초대성공입니다! Lumina는 투표수 <span class="text-yellow-400 font-bold">${player.fans.toLocaleString()}표</span>를 얻으며 당당하게 1위 가수로 올라섰습니다.<br><br>
+                    데뷔를 위협하던 루머들을 이기고, 최고의 별이 된 당신에게 ${CHAR_NAMES[loverId]}가 무대 뒤에서 숨이 멎을 듯 안기며 고백해옵니다. "네가 없었다면 난 무대 위에서 길을 잃었을 거야. 내 은하계의 주인은 언제나 너야."
+                `;
+                endingTitleEl.className = "retro-font text-xl md:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-400 to-indigo-400";
+            } else {
+                offlineEndingTitle = "⭐ 위대한 명예의 전당 (우정 가왕 엔딩)";
+                offlineEndingDesc = `
+                    Lumina는 <span class="text-yellow-300 font-bold">${player.fans.toLocaleString()}표</span>의 경이로운 대기록으로 화려한 연장에 성공했습니다!<br><br>
+                    비록 누구 한 명과 단독 스캔들은 없었지만, 4명의 수려한 주인공들의 호위 속에서 대한민국 가요계의 전무후무한 황금빛 아이콘이자 영원한 동료로 우정을 빛내게 되었습니다.
+                `;
+                endingTitleEl.className = "retro-font text-xl md:text-2xl font-extrabold text-yellow-400";
+            }
+
+            endingTitleEl.innerText = offlineEndingTitle;
+            endingDescEl.innerHTML = offlineEndingDesc;
+
+            // Trigger Real-time AI Epilogue Novelizer if Gemini is enabled
+            const isAIActive = document.getElementById('ai-toggle-checkbox').checked;
+            if (isAIActive) {
+                const epilogueLoader = document.getElementById('epilogue-ai-loading');
+                epilogueLoader.classList.remove('hidden');
+
+                const novelPrompt = `
+                    여성향 아이돌 연애 시뮬레이션 게임 '망돌로 살아남기'의 최종 에필로그(웹소설 버전)를 감동적이고 수려하게 한 단락 작성해 주십시오.
+                    - 주인공 이름: ${player.name}
+                    - 최종 영입한 누적 팬덤 수: ${player.fans.toLocaleString()}명
+                    - 사랑이 결실을 맺은 공략 상대방: ${CHAR_NAMES[loverId]}
+                    - 게임 최종 결과 등급: ${player.fans >= 15000 ? '대성공 최고 인기 아이돌 등극' : '팬덤 미달로 인한 계약 파기 및 은퇴식'}
+                    - 상대방 성격 속성: ${loverId === 'ch-1' ? '은발의 새침한 츤데레 리더' : loverId === 'ch-2' ? '금발의 따스한 메인보컬 댕댕이 하온' : loverId === 'ch-3' ? '자안의 치명적 섹시 라이벌 은우' : '듬직하고 깊은 눈매의 다정한 안경 매니저 재현'}
+                    
+                    당신의 최종 팬 수(${player.fans.toLocaleString()}명)와 사랑하는 ${CHAR_NAMES[loverId]}와의 극적인 성공 혹은 이별의 감정을 다루는 6~7줄 분량의 밀도 있고 로맨틱한 소설 에필로그를 완성해 주십시오.
+                `;
+
+                try {
+                    const aiNovelText = await queryGemini(novelPrompt, "너는 카카오페이지나 네이버 시리즈에서 큰 인기를 얻고 있는 로맨스 판타지/아이돌 현대 로맨스 소설 대상 작가다. 인물들의 독백과 분위기 묘사를 세심하고 아름답게 한글로 담아라.");
+                    epilogueLoader.classList.add('hidden');
+                    
+                    // Display newly written customized novelized epilogue
+                    endingDescEl.innerHTML = `
+                        <div class="text-xs bg-slate-950/60 p-3 rounded-xl border border-pink-500/20 mb-4 text-pink-300 font-semibold leading-relaxed">
+                            🤖 AI가 오직 당신만을 위해 집필한 고유 헌정 소설 에필로그:
+                        </div>
+                        <p class="italic font-medium leading-relaxed">${aiNovelText.replace(/\n/g, '<br>')}</p>
+                        <div class="mt-4 pt-3 border-t border-purple-500/10 text-[10px] text-slate-400">
+                            * 최종 스탯: 보컬 ${player.vocal} | 안무 ${player.dance} | 비주얼 ${player.visual} | 호감도 합산 ${(player.romance['ch-1'] + player.romance['ch-2'] + player.romance['ch-3'] + player.romance['ch-4'])}%
+                        </div>
+                    `;
+                    playSound('success');
+                } catch (err) {
+                    console.error("AI Epilogue generator failed, showing default text.", err);
+                    epilogueLoader.classList.add('hidden');
+                }
+            }
+        }
+
+        function triggerEnding(reason) {
+            switchScreen('screen-ending');
+            const endingTitleEl = document.getElementById('ending-title');
+            const endingDescEl = document.getElementById('ending-desc');
+            const endingPortrait = document.getElementById('ending-portrait');
+
+            endingPortrait.innerHTML = getCharacterSVG('player', 'sad');
+
+            if (reason === 'stress_over') {
+                endingTitleEl.innerText = "🚑 무리한 무대 탈진 (과로 치료 엔딩)";
+                endingTitleEl.className = "retro-font text-xl md:text-2xl font-extrabold text-red-600 animate-pulse";
+                endingDescEl.innerHTML = `
+                    매혹적인 아이돌이 되기 위한 길은 멀고도 험했습니다. 주인공 ${player.name}의 스트레스 수치가 한계치인 <span class="text-red-400 font-bold">100%</span>에 먼저 닿았습니다.<br><br>
+                    연습실 먼지 바닥 위에 탈진한 채 실려간 당신은 결국 기획사 컴백 라이브 쇼케이스 무대에 얼굴조차 비추지 못하고 장기 휴면기에 들어가게 되었습니다. 다음 생에는 꿀맛 같은 수면 휴식을 잘 적절히 배합하여 우주 탑돌을 꾀해 보세요!
+                `;
+                playSound('sad');
+            }
+        }
+
+        function restartGame() {
+            playSound('click');
+            player = {
+                name: "이유림",
+                groupName: "루미나",
+                vocal: 15,
+                dance: 12,
+                visual: 18,
+                fans: 120,
+                funds: 50,
+                stress: 10,
+                day: 1,
+                week: 1,
+                romance: {
+                    'ch-1': 10,
+                    'ch-2': 15,
+                    'ch-3': 0,
+                    'ch-4': 5
+                }
+            };
+            chatHistories = { 'ch-1': [], 'ch-2': [], 'ch-3': [], 'ch-4': [] };
+            document.getElementById('game-logs').innerHTML = "<div>• 루미나 기획사에서 생존 컴백 데드라인 계약서가 날아왔습니다.</div>";
+            switchScreen('screen-title');
+        }
+
+        function shareResult() {
+            playSound('click');
+            const textToCopy = `[망돌로 살아남기 AI 에디션]\nLUMINA 리더: ${player.name}\n최종 찐팬 회원수: ${player.fans.toLocaleString()}명 확보!\n결과: ${document.getElementById('ending-title').innerText}\n지금 Gemini AI가 내리는 맞춤형 미연시를 플레이해 보세요!`;
+            
+            const tempInput = document.createElement("textarea");
+            tempInput.value = textToCopy;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+
+            addLog("게임 결과 일기가 클립보드에 카피되었습니다! 소환해 보세요!");
+            
+            const btn = event.target;
+            const originalText = btn.innerText;
+            btn.innerText = "카피 완료! ✔";
+            setTimeout(() => btn.innerText = originalText, 2000);
+        }
+    </script>
+
+
+    <!-- CANVAS HEART & STAR EFFECT ENGINE -->
+    <script>
+        const canvas = document.getElementById('stage-effects');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let animationId = null;
+
+        function resizeStageCanvas() {
+            const parent = canvas.parentElement;
+            canvas.width = parent.clientWidth;
+            canvas.height = parent.clientHeight;
+        }
+
+        window.addEventListener('resize', resizeStageCanvas);
+
+        class Particle {
+            constructor(type, x, y) {
+                this.type = type; 
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 8 + 6;
+                this.speedY = -(Math.random() * 2 + 1);
+                this.speedX = (Math.random() - 0.5) * 2;
+                this.alpha = 1;
+                this.decay = Math.random() * 0.015 + 0.01;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                
+                if (this.type === 'heart') {
+                    ctx.fillStyle = '#ff2e93';
+                    ctx.beginPath();
+                    const d = this.size;
+                    ctx.moveTo(this.x, this.y + d / 4);
+                    ctx.quadraticCurveTo(this.x, this.y, this.x - d / 2, this.y);
+                    ctx.quadraticCurveTo(this.x - d, this.y, this.x - d, this.y + d / 2);
+                    ctx.quadraticCurveTo(this.x - d, this.y + d, this.x, this.y + d * 1.3);
+                    ctx.quadraticCurveTo(this.x + d, this.y + d, this.x + d, this.y + d / 2);
+                    ctx.quadraticCurveTo(this.x + d, this.y, this.x + d / 2, this.y);
+                    ctx.quadraticCurveTo(this.x, this.y, this.x, this.y + d / 4);
+                    ctx.closePath();
+                    ctx.fill();
+                } else {
+                    ctx.fillStyle = '#fde047';
+                    ctx.beginPath();
+                    const d = this.size;
+                    ctx.moveTo(this.x, this.y - d);
+                    ctx.lineTo(this.x + d/3, this.y - d/3);
+                    ctx.lineTo(this.x + d, this.y);
+                    ctx.lineTo(this.x + d/3, this.y + d/3);
+                    ctx.lineTo(this.x, this.y + d);
+                    ctx.lineTo(this.x - d/3, this.y + d/3);
+                    ctx.lineTo(this.x - d, this.y);
+                    ctx.lineTo(this.x - d/3, this.y - d/3);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+
+            update() {
+                this.y += this.speedY;
+                this.x += this.speedX;
+                this.alpha -= this.decay;
+            }
+        }
+
+        function triggerCanvasParticles(type) {
+            resizeStageCanvas();
+            particles = [];
+            
+            const startX = canvas.width / 2;
+            const startY = canvas.height / 2 + 30;
+
+            for (let i = 0; i < 22; i++) {
+                particles.push(new Particle(type, startX + (Math.random() - 0.5) * 60, startY + (Math.random() - 0.5) * 60));
+            }
+
+            if (animationId) cancelAnimationFrame(animationId);
+            animateParticles();
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            particles.forEach((p, index) => {
+                p.update();
+                p.draw();
+                if (p.alpha <= 0) {
+                    particles.splice(index, 1);
+                }
+            });
+
+            if (particles.length > 0) {
+                animationId = requestAnimationFrame(animateParticles);
+            }
+        }
+    </script>
+</body>
+</html>
