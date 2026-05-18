@@ -6,7 +6,7 @@
   <title>최애의 버블 (bubble) - Premium Sim</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Alpine.js CDN for elegant state management -->
+  <!-- Alpine.js CDN for state management -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <!-- Google Fonts Noto Sans KR -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
@@ -15,306 +15,335 @@
     body {
       font-family: 'Noto Sans KR', sans-serif;
     }
-    /* Custom Scrollbar for chat */
+    /* Custom Scrollbars */
     .chat-scroll::-webkit-scrollbar {
       width: 4px;
+      height: 4px;
     }
     .chat-scroll::-webkit-scrollbar-track {
       background: transparent;
     }
     .chat-scroll::-webkit-scrollbar-thumb {
-      background: rgba(0, 0, 0, 0.15);
+      background: rgba(0, 0, 0, 0.12);
       border-radius: 99px;
     }
-    /* Toast slide animation */
+    /* Toast animation */
     @keyframes slideUp {
-      from { transform: translateY(100%) scale(0.9); opacity: 0; }
+      from { transform: translateY(100%) scale(0.95); opacity: 0; }
       to { transform: translateY(0) scale(1); opacity: 1; }
     }
     .animate-slide-up {
       animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
-    /* Heart bounce animation */
+    /* Floating hearts */
     @keyframes floatHeart {
       0% { transform: translateY(0) scale(0.8); opacity: 0; }
-      15% { opacity: 1; }
-      100% { transform: translateY(-120px) scale(1.2); opacity: 0; }
+      15% { opacity: 0.95; }
+      100% { transform: translateY(-130px) scale(1.3); opacity: 0; }
     }
     .heart-float {
-      animation: floatHeart 1.2s ease-out forwards;
+      animation: floatHeart 1.3s ease-out forwards;
     }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-800 overflow-hidden select-none">
 
-  <!-- Main Alpine App Container -->
+  <!-- Main App Root Container -->
   <div x-data="bubbleApp()" class="flex h-screen w-screen bg-slate-950 text-slate-800 overflow-hidden">
     
-    <!-- Toast Notification Portal -->
+    <!-- Dynamic Interactive Toast Notification Panel -->
     <div class="fixed top-4 right-4 z-50 space-y-2 pointer-events-none max-w-sm w-full">
       <template x-for="toast in toasts" :key="toast.id">
         <div 
-          class="p-3.5 rounded-2xl shadow-xl flex items-center gap-2.5 text-xs font-semibold border text-white pointer-events-auto animate-slide-up"
+          class="p-3.5 rounded-2xl shadow-2xl flex items-center gap-2.5 text-xs font-black border text-white pointer-events-auto animate-slide-up"
           :class="{
             'bg-emerald-500/95 border-emerald-400': toast.type === 'success',
             'bg-amber-500/95 border-amber-400': toast.type === 'warning',
             'bg-slate-900/95 border-slate-700': toast.type === 'info'
           }"
         >
-          <!-- Alert Icon SVG -->
-          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          <span class="flex-1" x-text="toast.message"></span>
-          <button @click="toasts = toasts.filter(t => t.id !== toast.id)" class="p-0.5 hover:bg-white/10 rounded-full transition-all">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          <svg class="w-4.5 h-4.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <span class="flex-1 leading-normal" x-text="toast.message"></span>
+          <button @click="toasts = toasts.filter(t => t.id !== toast.id)" class="p-0.5 hover:bg-white/15 rounded-full transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
         </div>
       </template>
     </div>
 
-    <!-- SIDEBAR: Control Panel (Visible on Desktop) -->
-    <div class="hidden lg:flex flex-col w-96 bg-slate-900 border-r border-slate-800 p-6 justify-between text-slate-100 overflow-y-auto shrink-0">
+    <!-- DESKTOP CONTROL PANEL (Left Sidebar) -->
+    <div class="hidden lg:flex flex-col w-96 bg-slate-900 border-r border-slate-800 p-6 justify-between text-slate-100 overflow-y-auto shrink-0 select-none">
       <div class="space-y-6">
         <div class="flex items-center space-x-3">
           <div class="bg-gradient-to-tr from-pink-500 to-indigo-500 p-2.5 rounded-2xl shadow-lg shadow-indigo-500/30">
-            <!-- Sparkles Icon -->
-            <svg class="h-6 w-6 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+            <svg class="h-6 w-6 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+            </svg>
           </div>
           <div>
-            <h1 class="font-black text-xl tracking-tight bg-gradient-to-r from-pink-400 to-indigo-400 bg-clip-text text-transparent">최애의 버블 Custom</h1>
-            <p class="text-xs text-slate-400 font-medium">말투 & 성격 지정 메신저 시뮬레이터</p>
+            <h1 class="font-black text-xl tracking-tight bg-gradient-to-r from-pink-400 to-indigo-400 bg-clip-text text-transparent">최애의 버블 Premium</h1>
+            <p class="text-[11px] text-slate-400 font-medium">Gemini &amp; Imagen 3 API 고증판</p>
           </div>
         </div>
 
-        <!-- AI Engine Spec Banner -->
-        <div class="bg-indigo-950/40 border border-indigo-800/60 p-3.5 rounded-2xl space-y-1.5">
-          <div class="flex items-center justify-between text-[11px]">
-            <span class="bg-pink-500 text-white px-2 py-0.5 rounded-full font-black tracking-wider text-[9px]">GEMINI 2.5 ACTIVE</span>
-            <span class="text-indigo-300 font-semibold">티키타카 시스템 적용됨</span>
+        <!-- Gemini API Key configuration -->
+        <div class="bg-indigo-950/40 border border-indigo-800/60 p-4 rounded-2xl space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="bg-indigo-500 text-white px-2 py-0.5 rounded-full font-black tracking-wider text-[9px]">🔑 API KEY REQUIRED</span>
+            <span class="text-[10px] text-indigo-300 font-semibold" x-text="apiKey ? '등록 완료' : '미등록 (백업모드)'"></span>
           </div>
           <p class="text-[11px] text-slate-300 leading-relaxed">
-            내가 직접 커스텀한 아티스트와 1대1 교감이 가능합니다. 대화 흐름을 이해하고 대답하며, 정해진 문장이 아닌 자유로운 생성 인공지능이 작동합니다.
+            구글 AI 스튜디오에서 발급받은 **Gemini API 키**를 등록해주세요. 내 아티스트들의 고유 설정(말투, 갤러리 묘사)에 맞게 완벽한 자유 답변 대화가 시작됩니다.
           </p>
-        </div>
-
-        <!-- API KEY SETTING PANEL (For custom Gemini access) -->
-        <div class="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700/50 space-y-2">
-          <h2 class="text-xs font-black text-amber-400 flex items-center gap-1.5">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m-2-2a2 2 0 11-2-2m2 2a2 2 0 002 2m0 0a2 2 0 012 2m0 0a2 2 0 01-2 2m0-10V7a2 2 0 00-2-2h-2m-2 0H5a2 2 0 00-2 2v3m2 4H5a2 2 0 00-2 2v4a2 2 0 002 2h10a2 2 0 002-2v-4a2 2 0 00-2-2"></path></svg>
-            개인 Gemini API 키 연동 (선택)
-          </h2>
-          <div class="space-y-1">
+          <div class="relative">
             <input 
-              type="password" 
-              x-model="geminiApiKey" 
-              @input="saveApiKeyToLocal()"
-              placeholder="AI 연동용 API Key 입력..." 
-              class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-amber-400 placeholder-slate-500"
+              :type="showKeyOnSidebar ? 'text' : 'password'" 
+              x-model="apiKey"
+              @input="saveApiKey()"
+              placeholder="AIzaSy... 입력"
+              class="w-full bg-slate-900 border border-slate-700/85 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 pr-8"
             />
-            <p class="text-[9px] text-slate-400 leading-normal">
-              ※ 입력 시 로컬에 저장되며, 실시간 맞춤형 챗봇 소통이 완전 무제한으로 활성화됩니다. 미입력 시 준비된 지능적 로직으로 응답합니다.
-            </p>
+            <button @click="showKeyOnSidebar = !showKeyOnSidebar" class="absolute right-2.5 top-2.5 text-slate-400 hover:text-white transition-all text-xs">
+              <span x-text="showKeyOnSidebar ? '🙈' : '👁️'"></span>
+            </button>
           </div>
         </div>
 
-        <!-- Mode Switcher -->
+        <!-- App Mode Switcher -->
         <div class="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700/50 space-y-2">
           <h2 class="text-xs font-black text-pink-400 flex items-center gap-1.5">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            연결 모드 설정
+            🟢 연결망 동작 방식 선택
           </h2>
-          <div class="grid grid-cols-2 gap-2 mt-2">
+          <div class="grid grid-cols-2 gap-2 mt-1">
             <button 
               @click="setAppMode('sandbox')"
               class="py-2 px-3 rounded-xl text-xs font-bold transition-all"
-              :class="appMode === 'sandbox' ? 'bg-pink-500 text-white shadow-md shadow-pink-500/20' : 'bg-slate-700 hover:bg-slate-600 text-slate-300'"
+              :class="appMode === 'sandbox' ? 'bg-pink-500 text-white shadow-md' : 'bg-slate-700 text-slate-300'"
             >
-              가상 시뮬 (AI)
+              개인 가상 (AI)
             </button>
             <button 
               @click="setAppMode('live')"
-              class="py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1"
-              :class="appMode === 'live' ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/20' : 'bg-slate-700 hover:bg-slate-600 text-slate-300'"
+              class="py-2 px-3 rounded-xl text-xs font-bold transition-all"
+              :class="appMode === 'live' ? 'bg-indigo-500 text-white shadow-md' : 'bg-slate-700 text-slate-300'"
             >
-              실시간 연동 (Live)
+              실시간 멀티 (Live)
             </button>
           </div>
         </div>
 
-        <!-- Customizer Panel -->
-        <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/50 space-y-3.5">
-          <h2 class="text-xs font-black text-slate-300 flex items-center gap-1.5">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
-            퍼스널라이징 설정
+        <!-- Role Customization -->
+        <div class="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700/50 space-y-2">
+          <h2 class="text-xs font-black text-indigo-400 flex items-center gap-1.5">
+            👤 모의역할 제어
           </h2>
-          
-          <div class="space-y-1">
-            <label class="text-[11px] text-slate-400 font-bold">팬 닉네임 설정</label>
-            <input 
-              type="text" 
-              x-model="userName" 
-              class="w-full bg-slate-700/60 border border-slate-600 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
-            />
-          </div>
-
-          <div class="space-y-1">
-            <label class="text-[11px] text-slate-400 font-bold">기념일 일수 (D+Days)</label>
-            <input 
-              type="number" 
-              x-model.number="subDays" 
-              class="w-full bg-slate-700/60 border border-slate-600 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none"
-            />
-          </div>
-
-          <div class="space-y-1">
-            <label class="text-[11px] text-slate-400 font-bold">채팅방 배경색</label>
-            <div class="flex gap-1.5">
-              <template x-for="color in ['#f8fafc', '#ecf2ff', '#fff0f5', '#eefbfb', '#0f172a']">
-                <button 
-                  @click="chatBg = color"
-                  :style="'background-color: ' + color"
-                  class="w-6 h-6 rounded-full border-2 transition-all"
-                  :class="chatBg === color ? 'border-pink-500 scale-110' : 'border-transparent'"
-                ></button>
-              </template>
-            </div>
+          <div class="grid grid-cols-2 gap-2">
+            <button 
+              @click="userRole = 'fan'; showToast('수신자(팬) 시뮬레이션으로 전환되었습니다.')"
+              class="py-2 px-3 rounded-xl text-xs font-bold transition-all"
+              :class="userRole === 'fan' ? 'bg-indigo-500 text-white' : 'bg-slate-700 text-slate-300'"
+            >
+              🙋‍♀️ 팬 모드
+            </button>
+            <button 
+              @click="userRole = 'artist'; showToast('아티스트의 송출 콘솔방으로 전환되었습니다.')"
+              class="py-2 px-3 rounded-xl text-xs font-bold transition-all"
+              :class="userRole === 'artist' ? 'bg-purple-600 text-white' : 'bg-slate-700 text-slate-300'"
+            >
+              👑 아티스트 모드
+            </button>
           </div>
         </div>
       </div>
 
-      <div class="space-y-2 mt-4 pt-4 border-t border-slate-800">
-        <div class="flex items-center justify-between text-xs text-slate-400">
-          <span>데이터베이스 상태:</span>
-          <span class="font-extrabold text-green-400" x-text="dbStatus"></span>
+      <div class="space-y-2 mt-4 pt-4 border-t border-slate-800 text-[11px] text-slate-500 leading-relaxed">
+        <div class="flex justify-between items-center text-slate-400">
+          <span>네트워크 상태:</span>
+          <span class="font-extrabold" :class="dbStatus.includes('연결됨') ? 'text-green-400' : 'text-amber-400'" x-text="dbStatus"></span>
         </div>
-        <p class="text-[10px] text-slate-500 leading-relaxed">
-          * 아티스트 목록 우측 상단의 [+] 버튼을 눌러 나만의 세계관과 개성 강한 아티스트를 무제한 추가할 수 있습니다.
-        </p>
+        <p>* 카리나, 원빈, 채원 외에도 하단의 [+] 버튼을 사용해 세계관 및 전용 말투, 그리고 로컬 갤러리 이미지를 장착한 최애를 무한히 빌드할 수 있습니다.</p>
       </div>
     </div>
 
-    <!-- MAIN APP SCREEN WRAPPER -->
+    <!-- CENTRAL MOBILE PREVIEW WRAPPER -->
     <div class="flex-1 flex justify-center items-center p-0 sm:p-4 bg-gradient-to-br from-slate-950 to-slate-900">
-      <div class="relative w-full h-full sm:max-w-[420px] sm:h-[840px] bg-white sm:rounded-[36px] shadow-2xl overflow-hidden flex flex-col border border-slate-800/40">
+      <div class="relative w-full h-full sm:max-w-[420px] sm:h-[840px] bg-white sm:rounded-[38px] shadow-2xl overflow-hidden flex flex-col border border-slate-800/40">
         
-        <!-- SPLASH SCREEN LAYER -->
-        <div 
-          x-show="isSplashScreen" 
-          x-transition:leave="transition ease-in duration-500" 
-          x-transition:leave-start="opacity-100" 
-          x-transition:leave-end="opacity-0"
-          class="absolute inset-0 z-50 bg-gradient-to-tr from-pink-500 via-purple-500 to-indigo-600 flex flex-col justify-center items-center text-white"
-        >
-          <div class="bg-white/10 p-5 rounded-3xl backdrop-blur-md mb-4 shadow-xl border border-white/20 animate-pulse">
-            <svg class="w-16 h-16 text-white fill-current" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-          </div>
-          <h1 class="text-3xl font-black tracking-widest italic">bubble</h1>
-          <p class="text-xs font-semibold tracking-wider text-pink-100/80 mt-2">Custom Voice & Chat</p>
-          <div class="absolute bottom-12 flex flex-col items-center gap-1.5">
-            <div class="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-            <span class="text-[10px] text-white/60 tracking-widest">LOADING WORLD</span>
-          </div>
-        </div>
-
-        <!-- Simulated iOS status bar -->
-        <div class="bg-white px-6 py-2 flex justify-between items-center text-xs text-slate-800 font-semibold select-none border-b border-slate-100">
+        <!-- MOBILE SCREEN STATUS BAR (Simulated iOS layout) -->
+        <div class="bg-white px-6 py-2.5 flex justify-between items-center text-xs text-slate-800 font-bold select-none border-b border-slate-100 shrink-0">
           <span>9:41</span>
           <div class="flex items-center gap-1.5 text-[11px]">
             <span 
-              class="text-[9px] font-black px-1.5 py-0.5 rounded bg-pink-100 text-pink-600"
-              x-text="'CUSTOM SIM'"
+              class="text-[9px] font-black px-1.5 py-0.5 rounded tracking-wider"
+              :class="appMode === 'live' ? 'bg-indigo-100 text-indigo-700' : 'bg-pink-100 text-pink-600'"
+              x-text="appMode === 'live' ? 'LIVE NETWORK' : 'GEMINI CORE'"
             ></span>
             <span>📶</span>
             <span>🔋</span>
           </div>
         </div>
 
-        <!-- ADD ARTIST OVERLAY MODAL -->
-        <div x-show="isAddingArtist" class="absolute inset-0 bg-black/60 z-50 flex items-center justify-center p-4" x-transition>
-          <div class="bg-white rounded-3xl w-full max-w-sm p-5 space-y-4 shadow-2xl max-h-[90%] overflow-y-auto">
+        <!-- MOBILE QUICK CONFIG PANEL (Shown on mobile screens only) -->
+        <div class="lg:hidden flex bg-slate-900 text-white p-2 justify-around text-[11px] font-bold border-b border-slate-800 shrink-0">
+          <button 
+            @click="userRole = (userRole === 'fan' ? 'artist' : 'fan'); showToast('역할이 튜닝되었습니다.')"
+            class="bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg flex items-center gap-1 transition-all"
+          >
+            역할: <span x-text="userRole === 'fan' ? '🙋‍♀️ 팬' : '👑 아티스트'"></span>
+          </button>
+          <button 
+            @click="setAppMode(appMode === 'sandbox' ? 'live' : 'sandbox')"
+            class="bg-pink-600 hover:bg-pink-700 px-3 py-1 rounded-lg transition-all"
+          >
+            모드: <span x-text="appMode === 'sandbox' ? '가상 (AI)' : '실시간(Live)'"></span>
+          </button>
+        </div>
+
+        <!-- PREMIUM ADD / EDIT ARTIST OVERLAY MODAL -->
+        <div x-show="isAddingArtist" class="absolute inset-0 bg-black/75 z-50 flex items-center justify-center p-4" x-transition>
+          <div class="bg-white rounded-[28px] w-full max-w-[370px] p-5 space-y-4 shadow-2xl overflow-y-auto max-h-[92%] chat-scroll">
             <div class="flex justify-between items-center border-b pb-2">
-              <h3 class="font-extrabold text-sm text-slate-800 flex items-center gap-1.5">
-                <span class="text-lg">💖</span> 나만의 버블 최애 추가하기
+              <h3 class="font-black text-sm text-slate-800 flex items-center gap-1.5">
+                <span x-text="isEditMode ? '✏️ 아티스트 설정 수정' : '➕ 나만의 AI 최애 만들기'"></span>
               </h3>
               <button @click="isAddingArtist = false" class="text-slate-400 hover:text-slate-600">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
               </button>
             </div>
 
-            <!-- Form fields -->
-            <div class="space-y-3.5 text-xs text-slate-700">
+            <!-- Profile Fields -->
+            <div class="space-y-3.5 text-xs">
               <div class="grid grid-cols-2 gap-2">
                 <div>
-                  <label class="font-bold block mb-1">아티스트 이름*</label>
-                  <input type="text" x-model="newArt.name" placeholder="예: 윈터, 리암" class="w-full bg-slate-50 border rounded-xl px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500" />
+                  <label class="font-bold text-slate-500 block mb-1">아티스트 이름</label>
+                  <input type="text" x-model="newArtForm.name" placeholder="예: 윈터" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none" />
                 </div>
                 <div>
-                  <label class="font-bold block mb-1">소속 그룹 / 태그*</label>
-                  <input type="text" x-model="newArt.group" placeholder="예: aespa, Oasis" class="w-full bg-slate-50 border rounded-xl px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500" />
+                  <label class="font-bold text-slate-500 block mb-1">소속 그룹명</label>
+                  <input type="text" x-model="newArtForm.group" placeholder="예: aespa" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none" />
                 </div>
               </div>
 
+              <!-- Base64 Photo Upload for Avatar -->
               <div>
-                <label class="font-bold block mb-1">상태 메시지</label>
-                <input type="text" x-model="newArt.status" placeholder="예: 귤 먹는 중 🍊" class="w-full bg-slate-50 border rounded-xl px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500" />
-              </div>
-
-              <div>
-                <label class="font-bold block mb-1">프로필 이미지 URL</label>
-                <input type="text" x-model="newArt.avatar" placeholder="https://..." class="w-full bg-slate-50 border rounded-xl px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500" />
-                <p class="text-[9px] text-slate-400 mt-1">미입력 시 예쁜 파스텔 감성 고양이 이미지로 자동 적용됩니다.</p>
-              </div>
-
-              <div class="grid grid-cols-2 gap-2">
-                <div>
-                  <label class="font-bold block mb-1">대화방 테마 컬러</label>
-                  <div class="flex items-center gap-1.5 mt-1">
-                    <input type="color" x-model="newArt.themeColor" class="w-8 h-8 rounded-lg cursor-pointer border-0 bg-transparent p-0" />
-                    <span class="text-[10px]" x-text="newArt.themeColor"></span>
+                <label class="font-bold text-slate-500 block mb-1">프로필 사진 업로드</label>
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 rounded-full border bg-slate-100 overflow-hidden flex items-center justify-center shrink-0">
+                    <template x-if="newArtForm.avatar">
+                      <img :src="newArtForm.avatar" class="w-full h-full object-cover" />
+                    </template>
+                    <template x-if="!newArtForm.avatar">
+                      <span class="text-[10px] text-slate-400">사진</span>
+                    </template>
                   </div>
-                </div>
-                <div>
-                  <label class="font-bold block mb-1">초기 기념일 (D+)</label>
-                  <input type="number" x-model.number="newArt.dDay" class="w-full bg-slate-50 border rounded-xl px-2.5 py-1.5 focus:outline-none" />
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    @change="handleImageUpload($event, 'avatar')" 
+                    class="block w-full text-xs text-slate-500 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[11px] file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100"
+                  />
                 </div>
               </div>
 
-              <!-- custom system instruction setting -->
-              <div class="space-y-1.5 pt-1 border-t border-slate-100">
+              <!-- State message & Theme color code -->
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="font-bold text-slate-500 block mb-1">상태메시지</label>
+                  <input type="text" x-model="newArtForm.statusMessage" placeholder="오늘 하루도 파이팅!" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none" />
+                </div>
+                <div>
+                  <label class="font-bold text-slate-500 block mb-1">고유 테마 색상</label>
+                  <input type="color" x-model="newArtForm.themeColor" class="w-full h-8 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer p-0.5" />
+                </div>
+              </div>
+
+              <!-- 📸 DYNAMIC LOCAL GALLERY UPLOADER -->
+              <div class="border-t pt-3 space-y-2">
                 <div class="flex justify-between items-center">
-                  <label class="font-extrabold text-indigo-600">성격 및 말투 프롬프트 설정*</label>
-                  <span class="text-[9px] text-slate-400">나만의 최애 페르소나 설계</span>
+                  <label class="font-black text-slate-700 block">🖼️ 최애 전용 일상 갤러리 보관함</label>
+                  <span class="text-[9px] bg-indigo-100 text-indigo-700 font-bold px-1.5 py-0.2 rounded" x-text="newArtForm.gallery.length + '개 보유'"></span>
+                </div>
+                <p class="text-[10px] text-slate-400 leading-normal">
+                  "사진 선물 조르기"를 누르면 보관된 일상 갤러리 사진 중 하나를 AI가 선택해 알맞은 일상 코멘트와 함께 대화방에 보냅니다.
+                </p>
+
+                <!-- Gallery image files selector -->
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  multiple 
+                  @change="handleImageUpload($event, 'gallery')" 
+                  class="block w-full text-xs text-slate-500 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[11px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                />
+
+                <!-- Image Gallery Carousel Preview & Annotation -->
+                <div class="flex gap-2 overflow-x-auto py-1 chat-scroll max-h-[140px]">
+                  <template x-for="(pic, idx) in newArtForm.gallery" :key="idx">
+                    <div class="relative w-20 shrink-0 bg-slate-50 rounded-lg p-1 border border-slate-200 flex flex-col space-y-1">
+                      <img :src="pic.src" class="w-full h-12 object-cover rounded-md" />
+                      <input 
+                        type="text" 
+                        x-model="pic.desc" 
+                        placeholder="사진 상황 설명 (AI 묘사용)" 
+                        class="w-full text-[8px] p-0.5 border-b focus:outline-none"
+                      />
+                      <button 
+                        type="button" 
+                        @click="newArtForm.gallery.splice(idx, 1)" 
+                        class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[8px]"
+                      >
+                        x
+                      </button>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Personality Custom system instruction prompt templates -->
+              <div class="border-t pt-3">
+                <div class="flex justify-between items-center mb-1">
+                  <label class="font-black text-slate-700 block">💬 성격 및 대화 말투 주입 (핵심)</label>
+                  <span class="text-[10px] text-pink-500 font-bold">자연스러운 티키타카용</span>
                 </div>
                 
-                <!-- Prompt Presets selection -->
-                <div class="flex flex-wrap gap-1 pb-1.5">
-                  <button @click="applyPreset('츤데레')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[9px] font-bold px-2 py-0.5 rounded-full transition-all">츤데레 남사친 🐺</button>
-                  <button @click="applyPreset('다정연상')" class="bg-pink-50 hover:bg-pink-100 text-pink-700 text-[9px] font-bold px-2 py-0.5 rounded-full transition-all">다정다감 선배 🌸</button>
-                  <button @click="applyPreset('애교댕댕')" class="bg-amber-50 hover:bg-amber-100 text-amber-700 text-[9px] font-bold px-2 py-0.5 rounded-full transition-all">애교댕댕 여동생 🐾</button>
-                  <button @click="applyPreset('차분소심')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[9px] font-bold px-2 py-0.5 rounded-full transition-all">차분한 소심이 🍃</button>
+                <!-- Quick Persona Presets -->
+                <div class="grid grid-cols-4 gap-1 mb-2">
+                  <button type="button" @click="applyPersonaPreset('sweet')" class="bg-pink-50 hover:bg-pink-100 text-pink-700 border border-pink-200 rounded-lg p-1 text-[9px] font-bold">❤️ 다정연인</button>
+                  <button type="button" @click="applyPersonaPreset('tsundere')" class="bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg p-1 text-[9px] font-bold">🎸 츤데레</button>
+                  <button type="button" @click="applyPersonaPreset('senior')" class="bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 rounded-lg p-1 text-[9px] font-bold">🌸 차분선배</button>
+                  <button type="button" @click="applyPersonaPreset('buddy')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg p-1 text-[9px] font-bold">⚡ 장난짱친</button>
                 </div>
 
                 <textarea 
-                  x-model="newArt.customPrompt" 
-                  rows="4" 
-                  placeholder="예: 반말을 쓰고 다정한 남사친 말투. 츤데레 성격이라 틱틱거리지만 걱정을 많이 함. '임마', '바보냐'를 종종 씀. 취미는 방구석 기타 치기."
-                  class="w-full bg-slate-50 border rounded-xl px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  x-model="newArtForm.systemInstruction" 
+                  rows="3" 
+                  placeholder="예: 당신은 장난기가 넘치며 유저를 동네 친구처럼 대합니다. 반말투를 사용하고 'ㅋㅋㅋ'를 자주 포함하세요."
+                  class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none leading-relaxed"
                 ></textarea>
-                <p class="text-[9px] text-slate-400 leading-normal">
-                  * <b>팁</b>: 말투의 톤, 즐겨쓰는 이모티콘, 팬을 부르는 명칭, 성격 등을 아주 자세히 기재할수록 티키타카의 인공지능 완성도가 100%에 수렴합니다.
-                </p>
               </div>
             </div>
 
-            <button 
-              @click="submitNewArtist()"
-              class="w-full bg-gradient-to-r from-pink-500 to-indigo-600 hover:opacity-90 text-white py-3 rounded-xl font-bold text-xs shadow-md transition-all"
-            >
-              🎉 아티스트 탄생시키기
-            </button>
+            <div class="flex gap-2 shrink-0 pt-2">
+              <template x-if="isEditMode">
+                <button 
+                  @click="deleteArtist(newArtForm.id)" 
+                  class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-xl font-bold text-xs shadow-md transition-all shrink-0"
+                >
+                  🗑️ 구독 해지 (삭제)
+                </button>
+              </template>
+              <button 
+                @click="saveCustomArtist()"
+                class="flex-[2] bg-gradient-to-r from-pink-500 to-indigo-600 text-white py-2.5 rounded-xl font-black text-xs shadow-md tracking-wider transition-all hover:brightness-110 shrink-0"
+                x-text="isEditMode ? '💾 수정 완료' : '🎉 신규 구독 시작'"
+              ></button>
+            </div>
           </div>
         </div>
 
-        <!-- PROFILE EDIT OVERLAY MODAL -->
+        <!-- PROFILE RE-EDIT OVERLAY MODAL -->
         <div x-show="isEditingProfile" class="absolute inset-0 bg-black/60 z-40 flex items-center justify-center p-6" x-transition>
           <div class="bg-white rounded-3xl w-full p-5 space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b pb-2">
@@ -325,12 +354,14 @@
             </div>
             <div class="flex flex-col items-center gap-2">
               <img :src="userAvatar" class="w-16 h-16 rounded-full object-cover border-2 border-indigo-500 shadow-md" />
-              <button 
-                @click="let url = prompt('임시 프로필 이미지 주소를 입력하세요:', userAvatar); if(url) userAvatar = url"
-                class="text-[10px] text-indigo-600 font-bold hover:underline"
-              >
-                사진 변경하기
-              </button>
+              <div class="relative">
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  @change="handleUserAvatarUpload($event)" 
+                  class="block w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-[9px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                />
+              </div>
             </div>
             <div class="space-y-3">
               <div>
@@ -343,7 +374,7 @@
               </div>
             </div>
             <button 
-              @click="userName = tempName; userStatus = tempStatus; isEditingProfile = false; showToast('프로필 변경이 완료되었습니다!', 'success')"
+              @click="userName = tempName; userStatus = tempStatus; isEditingProfile = false; showToast('내 프로필이 보존되었습니다!', 'success')"
               class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-bold text-xs shadow-md transition-all"
             >
               변경사항 저장
@@ -351,33 +382,31 @@
           </div>
         </div>
 
-        <!-- MAIN SPA CONTENT SECTION -->
+        <!-- MAIN VIEWPORT CONTAINER -->
         <div class="flex-1 flex flex-col overflow-hidden relative" :style="'background-color: ' + (inChatRoom ? chatBg : '#fafaff')">
           
-          <!-- 1. BUBBLE VOICE LIVE SCREEN (Overlay) -->
-          <div x-show="isLiveActive" class="absolute inset-0 bg-slate-950/95 z-50 flex flex-col text-white" x-transition>
-            <!-- Live Header -->
-            <div class="p-4 flex justify-between items-center border-b border-slate-800">
+          <!-- VOICE LIVE BROADCAST SCREEN (Immersive Voice overlay) -->
+          <div x-show="isLiveActive" class="absolute inset-0 bg-slate-950/98 z-50 flex flex-col text-white" x-transition>
+            <!-- Live Screen Header -->
+            <div class="p-4 flex justify-between items-center border-b border-slate-900 shrink-0">
               <div class="flex items-center gap-2">
                 <span class="bg-rose-600 text-white font-black px-2 py-0.5 rounded-md text-[10px] animate-pulse">LIVE</span>
                 <span class="text-sm font-bold" x-text="activeArtist().name + ' 보이스 라이브'"></span>
               </div>
-              <button @click="isLiveActive = false" class="p-1.5 hover:bg-slate-800 rounded-full transition-all">
+              <button @click="isLiveActive = false" class="p-1.5 hover:bg-slate-900 rounded-full transition-all">
                 <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
               </button>
             </div>
 
-            <!-- Live Stage Center -->
-            <div class="flex-1 flex flex-col justify-center items-center p-6 text-center space-y-6 relative overflow-hidden">
-              <div class="relative w-full h-48 flex justify-center items-center">
+            <!-- Stage Center Area -->
+            <div class="flex-1 flex flex-col justify-center items-center p-6 text-center space-y-6 relative overflow-hidden select-none">
+              <div class="relative w-full h-42 flex justify-center items-center">
                 <div class="relative">
-                  <img :src="activeArtist().avatar" class="w-24 h-24 rounded-full border-4 border-pink-500 shadow-xl shadow-pink-500/20 object-cover animate-pulse" />
-                  <div class="absolute -bottom-1 -right-1 bg-pink-500 p-1.5 rounded-full">
-                    <svg class="w-4 h-4 text-white animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
-                  </div>
+                  <img :src="activeArtist().avatar" class="w-24 h-24 rounded-full border-4 border-pink-500 shadow-2xl shadow-pink-500/30 object-cover animate-pulse" />
+                  <div class="absolute -bottom-1 -right-1 bg-pink-500 p-2 rounded-full shadow-lg">🎙️</div>
                 </div>
 
-                <!-- Live Floating hearts container -->
+                <!-- Animated floating hearts -->
                 <template x-for="heart in liveHearts" :key="heart.id">
                   <span class="absolute bottom-16 heart-float text-3xl text-pink-500 pointer-events-none" :style="'left: ' + heart.left + '%'">❤️</span>
                 </template>
@@ -385,20 +414,20 @@
 
               <div>
                 <h3 class="font-bold text-lg" x-text="activeArtist().name + ' 님이 소통 중'"></h3>
-                <p class="text-xs text-slate-400 mt-1">"따뜻한 보이스와 실시간 댓글로 소통해보세요"</p>
+                <p class="text-xs text-slate-400 mt-1">"최애의 라이브 음성을 들으며 반응을 보내보세요"</p>
               </div>
 
-              <!-- Animated Wave Visualizer -->
-              <div class="flex items-center gap-1.5 h-10">
-                <template x-for="h in [24, 32, 16, 40, 24, 36, 12, 32, 20]" :key="Math.random()">
-                  <div class="bg-gradient-to-t from-pink-500 to-indigo-500 w-1.5 rounded-full animate-bounce" :style="'height: ' + h + 'px; animation-duration: ' + (h*20) + 'ms'"></div>
+              <!-- Wave graphic visualizer -->
+              <div class="flex items-center gap-1.5 h-8 select-none">
+                <template x-for="h in [14, 28, 20, 42, 10, 32, 18, 38, 14]">
+                  <div class="bg-gradient-to-t from-pink-500 to-indigo-500 w-1.5 rounded-full animate-bounce" :style="'height: ' + h + 'px; animation-duration: ' + (h*25) + 'ms'"></div>
                 </template>
               </div>
             </div>
 
-            <!-- Live Chat Section -->
-            <div class="h-44 bg-slate-900/60 flex flex-col border-t border-slate-800/80">
-              <div class="flex-1 overflow-y-auto p-3 space-y-2 text-xs">
+            <!-- Live Comment Stream & Form -->
+            <div class="h-40 bg-slate-900/80 flex flex-col border-t border-slate-900 shrink-0">
+              <div class="flex-1 overflow-y-auto p-3 space-y-2 text-xs chat-scroll">
                 <template x-for="com in liveComments">
                   <div class="flex gap-1.5 items-start">
                     <span class="text-pink-400 font-bold shrink-0" x-text="com.user + ':'"></span>
@@ -407,128 +436,111 @@
                 </template>
               </div>
 
-              <form @submit.prevent="handleLiveCommentSubmit" class="p-2 border-t border-slate-800 flex gap-2">
+              <form @submit.prevent="handleLiveCommentSubmit" class="p-2 border-t border-slate-950 flex gap-1.5 shrink-0">
                 <input 
                   type="text" 
                   x-model="liveChatInput"
                   placeholder="댓글을 달아주세요..." 
-                  class="flex-1 bg-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none placeholder-slate-500"
+                  class="flex-1 bg-slate-800 border-none rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none placeholder-slate-500"
                 />
-                <button 
-                  type="button" 
-                  @click="emitLiveHeart()" 
-                  class="bg-pink-500 hover:bg-pink-600 p-2 rounded-xl transition-all shrink-0"
-                >
-                  ❤️
-                </button>
-                <button 
-                  type="submit" 
-                  class="bg-indigo-600 hover:bg-indigo-700 px-3 rounded-xl font-bold text-xs text-white shrink-0"
-                >
-                  전송
-                </button>
+                <button type="button" @click="emitLiveHeart()" class="bg-pink-500 hover:bg-pink-600 p-2 rounded-xl transition-all shrink-0">❤️</button>
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 px-3.5 rounded-xl font-bold text-xs text-white shrink-0">전송</button>
               </form>
             </div>
           </div>
 
-          <!-- 2. IN-CHAT ROOM PRIVATE SCREEN -->
+          <!-- PRIVACY ONE-ON-ONE CHAT ROOM INTERFACE -->
           <div x-show="inChatRoom" class="flex-1 flex flex-col h-full overflow-hidden" x-transition>
-            <!-- Chat Header -->
-            <div class="px-4 py-3 bg-white/95 border-b border-slate-100 flex justify-between items-center backdrop-blur-sm z-10">
-              <div class="flex items-center gap-2.5">
-                <button @click="inChatRoom = false" class="p-1 hover:bg-slate-100 rounded-full text-slate-500 transition-all mr-1">
+            <!-- Chat Room Header -->
+            <div class="px-4 py-2.5 bg-white/95 border-b border-slate-100 flex justify-between items-center backdrop-blur-sm z-10 shrink-0 select-none">
+              <div class="flex items-center gap-2">
+                <button @click="inChatRoom = false" class="p-1 hover:bg-slate-100 rounded-full text-slate-500 transition-all">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
                 </button>
-                <img :src="activeArtist().avatar" class="w-9 h-9 rounded-full object-cover border border-slate-200" />
+                <img :src="activeArtist().avatar" class="w-8 h-8 rounded-full object-cover border border-slate-200" />
                 <div>
                   <div class="flex items-center gap-1">
-                    <span class="font-bold text-sm text-slate-800" x-text="activeArtist().name"></span>
-                    <span class="text-[9px] bg-slate-100 text-slate-500 px-1 py-0.2 rounded font-semibold" x-text="activeArtist().group"></span>
+                    <span class="font-bold text-xs text-slate-800" x-text="activeArtist().name"></span>
+                    <span class="text-[8px] bg-slate-100 text-slate-500 px-1 py-0.2 rounded font-semibold" x-text="activeArtist().group"></span>
                   </div>
-                  <div class="flex items-center gap-1 text-[10px] text-pink-500 font-semibold">
-                    <span x-text="'D+' + activeArtist().dDay"></span>
+                  <div class="flex items-center gap-1 text-[9px] text-pink-500 font-bold">
+                    <span x-text="'D+' + subDays"></span>
                     <span class="text-slate-300">•</span>
-                    <span>실시간 소통 중</span>
+                    <span>실시간 티키타카</span>
                   </div>
                 </div>
               </div>
 
-              <!-- Top Action icons -->
+              <!-- Call Action & Photo Generation requests -->
               <div class="flex items-center gap-1">
-                <!-- Photo Gift Request Button -->
                 <button 
                   x-show="appMode === 'sandbox' && userRole === 'fan'"
                   @click="requestArtistPhotoGift()"
                   :disabled="isGeneratingPhoto"
-                  class="p-2 rounded-full text-indigo-600 hover:bg-slate-100 transition-all"
+                  class="p-2 rounded-full text-indigo-600 hover:bg-slate-100 transition-all shrink-0"
                   :class="isGeneratingPhoto ? 'animate-spin opacity-50' : ''"
                   title="사진 선물 조르기"
                 >
-                  <!-- Camera Icon -->
-                  <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                  📸
                 </button>
-                <button @click="isLiveActive = true" class="p-1.5 hover:bg-slate-100 rounded-full text-rose-500 transition-all">
-                  <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                </button>
+                <button @click="isLiveActive = true" class="p-1.5 hover:bg-slate-100 rounded-full text-rose-500 transition-all shrink-0">📞</button>
               </div>
             </div>
 
-            <!-- Heartwarming Anniversary Bar -->
-            <div class="bg-pink-500/10 border-b border-pink-500/5 px-4 py-1.5 text-center text-[10px] text-pink-600 font-semibold flex items-center justify-center gap-1.5">
-              <span>💖 <span x-text="activeArtist().name"></span> 님과 함께한 지 <b x-text="activeArtist().dDay + '일'"></b>째 되는 날 💖</span>
+            <!-- Anniversary notice ribbon -->
+            <div class="bg-pink-500/10 border-b border-pink-500/5 px-4 py-1 text-center text-[10px] text-pink-600 font-extrabold flex items-center justify-center gap-1 shrink-0">
+              <span>💖 <span x-text="activeArtist().name"></span> 님과 함께 소통을 시작한 지 <b x-text="subDays + '일'"></b>째 되는 날 💖</span>
             </div>
 
-            <!-- Messages Stream Area -->
+            <!-- Main Scrollable Chat Bubble Board -->
             <div id="chatStream" class="flex-1 overflow-y-auto px-4 py-4 space-y-4 chat-scroll">
               <template x-for="msg in getActiveMessages()" :key="msg.id">
                 <div class="flex items-end gap-1.5" :class="msg.senderId === 'fan' ? 'justify-end' : 'justify-start'">
                   
-                  <!-- Profile Image (Artist messages) -->
+                  <!-- Profile photo for artist messages -->
                   <img 
                     x-show="msg.senderId !== 'fan'" 
                     :src="activeArtist().avatar" 
-                    class="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-100 shadow-sm" 
+                    class="w-7 h-7 rounded-full object-cover shrink-0 border border-slate-100 shadow-sm" 
                   />
 
-                  <div class="flex flex-col" :class="msg.senderId === 'fan' ? 'max-w-[70%]' : 'max-w-[70%]'">
-                    <!-- Nickname label -->
+                  <div class="flex flex-col max-w-[70%]">
+                    <!-- Sender Name for artist -->
                     <span 
                       x-show="msg.senderId !== 'fan'" 
-                      class="text-[10px] text-slate-500 mb-0.5 ml-1 font-semibold" 
+                      class="text-[9px] text-slate-500 mb-0.5 ml-1 font-bold" 
                       x-text="msg.senderName"
                     ></span>
 
-                    <!-- Actual bubble container -->
+                    <!-- Actual custom balloon -->
                     <div class="relative group">
                       <div 
                         :style="'background-color: ' + (msg.senderId === 'fan' ? activeArtist().themeColor : '#ffffff') + '; color: ' + (msg.senderId === 'fan' ? '#ffffff' : '#1e293b') + '; opacity: ' + (bubbleOpacity / 100)"
-                        class="rounded-2xl px-3.5 py-2 text-xs shadow-sm border whitespace-pre-line break-words"
+                        class="rounded-xl px-3 py-1.5 text-xs shadow-sm border whitespace-pre-line break-words leading-relaxed"
                         :class="msg.senderId === 'fan' ? 'rounded-tr-none border-transparent' : 'rounded-tl-none border-slate-100'"
                       >
-                        <!-- Check voice message -->
+                        <!-- Voice message block format -->
                         <template x-if="msg.isVoice">
                           <button 
                             @click="playVoiceNote(msg.id, msg.text)"
                             class="flex items-center gap-2 font-bold text-left focus:outline-none"
                           >
-                            <div class="p-1 bg-pink-100 rounded-full">
-                              🎙️
-                            </div>
-                            <div class="text-[11px]">
-                              <span class="block text-[10px] opacity-75 font-semibold" x-text="'보이스 메시지 ' + msg.voiceDuration"></span>
-                              <span class="text-pink-600 text-[10px] font-bold block mt-0.5">▶ 클릭 재생</span>
+                            <div class="p-1 bg-pink-100 rounded-full text-xs">🎙️</div>
+                            <div class="text-[10px]">
+                              <span class="block text-[9px] opacity-75 font-semibold" x-text="'음성 메시지 ' + msg.voiceDuration"></span>
+                              <span class="text-pink-600 text-[9px] font-black block mt-0.5">▶ 음성 듣기</span>
                             </div>
                           </button>
                         </template>
 
-                        <!-- Standard parsed text -->
+                        <!-- Normal text message block format with image attachments -->
                         <template x-if="!msg.isVoice">
                           <div>
                             <span x-text="parseMessage(msg.text, userName)"></span>
                             
-                            <!-- Embedded Image Gift -->
+                            <!-- Embedded surprise photo gift element -->
                             <template x-if="msg.imageUrl">
-                              <div class="mt-2 rounded-xl overflow-hidden shadow-inner border border-slate-100 bg-slate-50">
+                              <div class="mt-1.5 rounded-xl overflow-hidden shadow-inner border border-slate-100 bg-slate-50">
                                 <img :src="msg.imageUrl" class="w-full h-auto object-cover max-h-52" />
                               </div>
                             </template>
@@ -538,105 +550,103 @@
                     </div>
                   </div>
 
-                  <!-- Time Stamp + Unread '1' Badge -->
-                  <div class="flex flex-col items-center justify-end h-full shrink-0">
-                    <span class="text-[9px] text-pink-500 font-bold leading-none mb-1">1</span>
-                    <span class="text-[8px] text-slate-400 select-none" x-text="formatTime(msg.timestamp)"></span>
+                  <!-- Delivery indicators -->
+                  <div class="flex flex-col items-center justify-end h-full shrink-0 select-none">
+                    <span class="text-[8px] text-pink-500 font-black leading-none mb-0.5">1</span>
+                    <span class="text-[7px] text-slate-400" x-text="formatTime(msg.timestamp)"></span>
                   </div>
 
                 </div>
               </template>
 
-              <!-- Typing Indicator -->
+              <!-- Real-time Gemini loading and thinking state indicator -->
               <div x-show="isAiTyping" class="flex justify-start items-end gap-1.5 animate-pulse">
-                <img :src="activeArtist().avatar" class="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-100" />
+                <img :src="activeArtist().avatar" class="w-7 h-7 rounded-full object-cover shrink-0 border border-slate-100 shadow-sm" />
                 <div class="flex flex-col max-w-[70%]">
-                  <span class="text-[10px] text-slate-400 mb-0.5 ml-1 font-semibold" x-text="activeArtist().name"></span>
-                  <div class="bg-white rounded-2xl rounded-tl-none px-4 py-2 text-xs border border-slate-100 text-slate-400 flex items-center gap-2">
-                    <span x-text="activeArtist().name + ' 님이 답장 생각 중...'"></span>
-                    <span class="flex gap-1">
-                      <span class="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></span>
-                      <span class="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
-                      <span class="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+                  <span class="text-[9px] text-slate-400 mb-0.5 ml-1 font-bold" x-text="activeArtist().name"></span>
+                  <div class="bg-white rounded-xl rounded-tl-none px-3 py-1.5 text-xs border border-slate-100 text-slate-400 flex items-center gap-1.5">
+                    <span x-text="activeArtist().name + ' 답장 입력 중...'"></span>
+                    <span class="flex gap-0.5">
+                      <span class="w-1 h-1 bg-indigo-400 rounded-full animate-bounce"></span>
+                      <span class="w-1 h-1 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
                     </span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Fan Reply Area -->
-            <form x-show="userRole === 'fan'" @submit.prevent="sendMessage()" class="p-3 bg-white/95 border-t border-slate-100 flex flex-col gap-1.5 z-10">
+            <!-- COMPACT FAN RESPONSE PANEL FORM (1번 요구사항: 입력창 세로 높이 축소) -->
+            <form x-show="userRole === 'fan'" @submit.prevent="sendMessage()" class="p-2 bg-white border-t border-slate-100 flex flex-col gap-1 z-10 shrink-0">
               <div class="flex items-center gap-2">
-                <button type="button" @click="showToast('사진 전송 기능은 프리미엄 계정 전용입니다.', 'warning')" class="p-1.5 hover:bg-slate-100 rounded-full text-slate-400 transition-all shrink-0">
+                <button type="button" @click="showToast('사진 송신은 유료 등급 전용입니다.', 'warning')" class="p-1 text-slate-400 hover:text-slate-600 shrink-0">
                   📷
                 </button>
 
                 <input 
                   type="text" 
                   x-model="messageInput"
-                  :placeholder="isAiTyping ? '최애의 답장을 기다려주세요...' : getCharLimit() + '자 이하로 답장을 입력하세요'"
+                  :placeholder="isAiTyping ? '답변 수신 대기 중...' : getCharLimit() + '자 이내로 예쁜 답장 전송'"
                   :maxlength="getCharLimit()"
                   :disabled="isAiTyping"
-                  class="flex-1 bg-slate-100 rounded-2xl px-4 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 placeholder-slate-400"
+                  class="flex-1 bg-slate-100 border-none rounded-xl px-3 py-1.5 text-xs focus:outline-none text-slate-800 placeholder-slate-400"
                 />
 
                 <button 
                   type="submit" 
                   :disabled="!messageInput.trim() || isAiTyping"
                   :style="'background-color: ' + activeArtist().themeColor"
-                  class="p-2 text-white rounded-full hover:brightness-110 transition-all disabled:opacity-50 shrink-0"
+                  class="p-1.5 text-white rounded-full hover:brightness-110 transition-all disabled:opacity-50 shrink-0 text-xs font-bold leading-none"
                 >
                   ▶
                 </button>
               </div>
-              <div class="flex justify-between items-center px-1 text-[9px] text-slate-400">
-                <span>오늘의 최대 답장 가능 자수: <b class="text-slate-600" x-text="getCharLimit() + '자'"></b></span>
+              <div class="flex justify-between items-center px-1 text-[8px] text-slate-400 select-none">
+                <span>기념일 답장 글자 한도: <b class="text-slate-600" x-text="getCharLimit() + '자'"></b></span>
                 <span x-text="messageInput.length + ' / ' + getCharLimit()"></span>
               </div>
             </form>
 
-            <!-- Artist Broadcaster Deck (Artist Role Only) -->
-            <div x-show="userRole === 'artist'" class="p-3 bg-slate-950 border-t border-slate-800 text-white flex flex-col gap-3 z-10 animate-slide-up">
-              <div class="flex justify-between items-center border-b border-slate-800 pb-1.5">
-                <span class="text-xs font-black text-pink-400 flex items-center gap-1">✨ 아티스트 버블 메가폰</span>
-                <span class="text-[9px] text-slate-500">[이름] 태그 사용 시 팬 별명 치환</span>
+            <!-- ARTIST CONSOLE PANEL (Shown under Artist Role in chat) -->
+            <div x-show="userRole === 'artist'" class="p-2.5 bg-slate-950 border-t border-slate-800 text-white flex flex-col gap-2 z-10 animate-slide-up shrink-0">
+              <div class="flex justify-between items-center border-b border-slate-800 pb-1 select-none">
+                <span class="text-[10px] font-black text-pink-400 flex items-center gap-1">✨ 아티스트 버블 송출 모듈</span>
+                <span class="text-[8px] text-slate-500">[이름] 치환 변수 지원</span>
               </div>
 
-              <div class="space-y-2">
-                <div class="flex gap-1.5 overflow-x-auto pb-1 text-[10px]">
-                  <button @click="triggerArtistBroadcast('안무 연습 하다가 생각나서 왔당 ㅎㅎ 🦁')" class="bg-slate-900 hover:bg-slate-800 px-2.5 py-1 rounded-full shrink-0 border border-slate-800">💬 안무연습</button>
-                  <button @click="triggerArtistBroadcast('밥은 꼭 잘 챙겨 먹어야 해 [이름]아! 🍚')" class="bg-slate-900 hover:bg-slate-800 px-2.5 py-1 rounded-full shrink-0 border border-slate-800">🍚 밥챙겨먹기</button>
-                  <button @click="triggerArtistBroadcast('방금 눈 떴어.. 🎙️ 목소리 선물!', true)" class="bg-slate-900 hover:bg-slate-800 px-2.5 py-1 rounded-full shrink-0 border border-slate-800 text-pink-300">🎙️ 기상보이스</button>
+              <div class="space-y-1.5">
+                <div class="flex gap-1.5 overflow-x-auto pb-0.5 text-[9px] chat-scroll select-none">
+                  <button @click="triggerArtistBroadcast('연습 끝나구 탄산 마시는 중 ㅎㅎ [이름]이는 뭐해?')" class="bg-slate-900 hover:bg-slate-800 px-2 py-0.5 rounded-full shrink-0 border border-slate-800 font-bold text-slate-300">💬 연습종료</button>
+                  <button @click="triggerArtistBroadcast('[이름]아! 삼시세끼 맛있는 거 꼭 챙겨먹어야 해 알았지? 🥰')" class="bg-slate-900 hover:bg-slate-800 px-2 py-0.5 rounded-full shrink-0 border border-slate-800 font-bold text-slate-300">🍚 삼시세끼</button>
+                  <button @click="triggerArtistBroadcast('목이 살짝 잠겼는데 아침 기념 목소리 들어볼래? 🎙️', true)" class="bg-slate-900 hover:bg-slate-800 px-2 py-0.5 rounded-full shrink-0 border border-slate-800 font-bold text-pink-300">🎙️ 목소리 선물</button>
                 </div>
 
                 <div class="flex gap-1.5">
                   <input 
                     type="text" 
-                    id="artMic"
-                    placeholder="팬들에게 보낼 전체 메시지를 입력하세요..." 
-                    class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none placeholder-slate-500"
+                    id="broadcasterInput"
+                    placeholder="구독한 모든 팬들에게 메시지 송출..." 
+                    class="flex-1 bg-slate-900 border border-slate-850 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none placeholder-slate-500"
                     @keydown.enter="let v = $el.value; if(v.trim()) { triggerArtistBroadcast(v); $el.value='' }"
                   />
                   <button 
-                    @click="let i = document.getElementById('artMic'); if(i && i.value.trim()){ triggerArtistBroadcast(i.value); i.value='' }"
-                    class="bg-pink-500 hover:bg-pink-600 px-4 py-2 rounded-xl text-xs font-bold transition-all"
+                    @click="let i = document.getElementById('broadcasterInput'); if(i && i.value.trim()){ triggerArtistBroadcast(i.value); i.value='' }"
+                    class="bg-pink-500 hover:bg-pink-600 px-3 py-1 rounded-lg text-xs font-black shrink-0 text-white transition-all"
                   >
-                    전송
+                    송출
                   </button>
                 </div>
               </div>
 
-              <!-- Live Fan Feedback Tracker -->
-              <div class="space-y-1">
-                <h4 class="text-[10px] text-slate-400 font-bold">수신 중인 실시간 피드백 대시보드</h4>
-                <div class="h-20 overflow-y-auto bg-slate-900 p-2 rounded-lg space-y-1 text-[10px] border border-slate-800/60 chat-scroll">
+              <!-- Real-time multi-replies simulation feed -->
+              <div class="space-y-0.5 select-none">
+                <div class="h-14 overflow-y-auto bg-slate-900 p-1.5 rounded-lg space-y-0.5 text-[8px] border border-slate-800/60 chat-scroll">
                   <template x-for="rep in artistConsoleReplies" :key="rep.id">
-                    <div class="flex justify-between border-b border-slate-800/40 pb-0.5">
+                    <div class="flex justify-between border-b border-slate-800/35 pb-0.5">
                       <div>
-                        <span class="text-indigo-400 font-bold mr-1.5" x-text="rep.fanName"></span>
+                        <span class="text-indigo-400 font-extrabold mr-1" x-text="rep.fanName"></span>
                         <span class="text-slate-300" x-text="rep.text"></span>
                       </div>
-                      <span class="text-[8px] text-slate-500" x-text="formatTime(rep.timestamp)"></span>
+                      <span class="text-[7px] text-slate-500 shrink-0" x-text="formatTime(rep.timestamp)"></span>
                     </div>
                   </template>
                 </div>
@@ -645,243 +655,285 @@
 
           </div>
 
-          <!-- 3. SPA TAB VIEW LAYER (Home, Chats, Settings) -->
-          <div x-show="!inChatRoom" class="flex-1 flex flex-col h-full overflow-hidden">
-            
-            <!-- HOME TAB (Friends & Custom Profiles) -->
-            <div x-show="activeTab === 'home'" class="flex-1 flex flex-col overflow-y-auto p-4 space-y-4 chat-scroll">
-              <div class="flex justify-between items-center select-none">
-                <h2 class="text-2xl font-black italic tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-600">bubble</h2>
-                <div class="flex gap-3 text-slate-600 items-center">
-                  <span class="cursor-pointer hover:text-indigo-600 text-lg">🔍</span>
-                  <span @click="openAddArtistModal()" class="cursor-pointer hover:text-indigo-600 text-lg font-bold bg-pink-100 text-pink-600 w-7 h-7 flex items-center justify-center rounded-full shadow-sm" title="최애 아티스트 추가하기">➕</span>
-                </div>
+          <!-- TAB VIEW: HOME (FRIENDS LIST) -->
+          <div x-show="!inChatRoom && activeTab === 'home'" class="flex-1 flex flex-col overflow-y-auto p-4 space-y-4 chat-scroll" x-transition>
+            <div class="flex justify-between items-center select-none">
+              <h2 class="text-2xl font-black italic tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-600">bubble</h2>
+              <div class="flex gap-2.5 items-center">
+                <!-- Create dynamic artist overlay trigger button -->
+                <button 
+                  @click="openAddArtistModal()" 
+                  class="text-indigo-600 hover:text-indigo-800 transition-all font-black text-xs border border-indigo-200 rounded-full px-2.5 py-1 bg-indigo-50 shadow-sm" 
+                  title="AI 최애 추가"
+                >
+                  ➕ 구독 최애 추가
+                </button>
               </div>
+            </div>
 
-              <!-- Interactive Profile Header Card -->
-              <div 
-                @click="tempName = userName; tempStatus = userStatus; isEditingProfile = true"
-                class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-50/50 transition-all"
-              >
-                <div class="flex items-center gap-3">
-                  <div class="relative">
-                    <img :src="userAvatar" class="w-12 h-12 rounded-full object-cover border-2 border-pink-500 shadow-sm" />
-                    <div class="absolute -bottom-1 -right-1 bg-pink-500 p-0.5 rounded-full text-[8px] text-white">⭐</div>
+            <!-- Profile card with configuration trigger -->
+            <div 
+              @click="tempName = userName; tempStatus = userStatus; isEditingProfile = true"
+              class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-50/50 transition-all select-none"
+            >
+              <div class="flex items-center gap-3">
+                <div class="relative">
+                  <img :src="userAvatar" class="w-12 h-12 rounded-full object-cover border-2 border-pink-500 shadow-sm" />
+                  <div class="absolute -bottom-1 -right-1 bg-pink-500 p-0.5 rounded-full text-[8px] text-white">⭐</div>
+                </div>
+                <div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-black text-sm text-slate-800" x-text="userName"></span>
+                    <span class="text-[9px] bg-pink-100 text-pink-600 px-1.5 py-0.2 rounded font-black">My Profile</span>
                   </div>
-                  <div>
-                    <div class="flex items-center gap-1.5">
-                      <span class="font-extrabold text-sm text-slate-800" x-text="userName"></span>
-                      <span class="text-[9px] bg-pink-100 text-pink-600 px-1.5 py-0.2 rounded font-black">My</span>
-                    </div>
-                    <p class="text-[11px] text-slate-500 mt-0.5 max-w-[200px] truncate" x-text="userStatus"></p>
-                  </div>
-                </div>
-                <span class="text-slate-400">〉</span>
-              </div>
-
-              <!-- Subscription Voucher Card -->
-              <div class="bg-gradient-to-tr from-pink-500 via-purple-500 to-indigo-600 rounded-3xl p-4 text-white shadow-xl relative overflow-hidden">
-                <div class="flex justify-between items-center mb-2">
-                  <div class="flex items-center gap-1.5 text-pink-100 font-black tracking-widest text-[9px]">
-                    🎟️ MY PASS VOUCHER
-                  </div>
-                  <span class="bg-white/20 text-[9px] font-bold px-2 py-0.5 rounded-full">구독 활성</span>
-                </div>
-                <p class="text-sm font-bold" x-text="'Lysn bubble ' + purchasedTickets + '인권 이용 중'"></p>
-                <div class="flex justify-between items-center mt-3 text-[10px] text-pink-100/95 border-t border-white/20 pt-2.5">
-                  <span>자동갱신일: 매월 18일</span>
-                  <button @click="activeTab = 'settings'" class="bg-white text-indigo-700 font-extrabold px-2.5 py-1 rounded-lg">티켓 상점</button>
+                  <p class="text-[11px] text-slate-500 mt-0.5 max-w-[200px] truncate" x-text="userStatus"></p>
                 </div>
               </div>
+              <span class="text-slate-400 text-xs">〉</span>
+            </div>
 
-              <!-- Recommendation Banner Slider -->
-              <div class="overflow-hidden rounded-2xl relative h-20 bg-slate-200 shadow-inner">
-                <div class="absolute inset-0 bg-gradient-to-r from-purple-950/80 to-transparent z-10 p-3.5 flex flex-col justify-center text-white">
-                  <span class="bg-rose-500 text-[8px] font-black px-1.5 py-0.2 rounded w-max mb-1">EVENT</span>
-                  <h4 class="text-xs font-black">나만의 최애를 설정하고 대화해보세요!</h4>
-                  <p class="text-[10px] text-slate-200/90 mt-0.5">상단 ➕ 버튼을 누르면 성격 및 말투를 직접 디자인할 수 있어요.</p>
+            <!-- Lysn voucher pass details -->
+            <div class="bg-gradient-to-tr from-pink-500 via-purple-500 to-indigo-600 rounded-2xl p-4 text-white shadow-lg relative overflow-hidden select-none">
+              <div class="flex justify-between items-center mb-1.5">
+                <div class="flex items-center gap-1 text-pink-100 font-black tracking-widest text-[9px]">
+                  🎟️ BUBBLE SUBSCRIPTION PASS
                 </div>
-                <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80" class="w-full h-full object-cover" />
+                <span class="bg-white/20 text-[9px] font-bold px-2 py-0.5 rounded-full">구독 완료</span>
+              </div>
+              <p class="text-sm font-black" x-text="'Lysn bubble ' + purchasedTickets + '인권 활성 상태'"></p>
+              <div class="flex justify-between items-center mt-3 text-[10px] text-pink-100/90 border-t border-white/15 pt-2">
+                <span>자동갱신일: 매월 18일</span>
+                <button @click="activeTab = 'shop'" class="bg-white text-indigo-700 font-extrabold px-2 py-0.5 rounded-lg text-[9px]">충전 충전소</button>
+              </div>
+            </div>
+
+            <!-- Subscribed Friends dynamic list with EDIT options -->
+            <div class="space-y-1.5 pt-1">
+              <div class="flex justify-between items-center mb-1.5 select-none">
+                <span class="text-[11px] font-black text-slate-400">구독 중인 내 최애 아티스트 목록 <span x-text="'(' + artists.length + ')'"></span></span>
               </div>
 
-              <!-- Subscribed Artists Title -->
-              <div class="flex justify-between items-center pt-2 select-none">
-                <span class="text-[11px] font-bold text-slate-400">구독 중인 아티스트 <span x-text="'(' + artists.length + ')'"></span></span>
-              </div>
-
-              <!-- Friend/Artist Row -->
-              <div class="space-y-2.5">
+              <div class="space-y-2">
                 <template x-for="art in artists" :key="art.id">
-                  <div 
-                    @click="handleSelectArtist(art.id)"
-                    class="bg-white rounded-2xl p-3 shadow-sm hover:shadow-md transition-all border border-slate-100 flex items-center justify-between cursor-pointer"
-                  >
-                    <div class="flex items-center gap-3">
+                  <div class="bg-white rounded-2xl p-3 shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all">
+                    <!-- Main selection trigger area -->
+                    <div @click="handleSelectArtist(art.id)" class="flex items-center gap-3 cursor-pointer flex-1 min-w-0">
                       <div class="relative">
                         <img :src="art.avatar" class="w-11 h-11 rounded-full object-cover border border-slate-200" />
                         <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span>
                       </div>
-                      <div>
-                        <div class="flex items-center gap-1.5">
+                      <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-1.5 flex-wrap">
                           <span class="font-extrabold text-sm text-slate-800" x-text="art.name"></span>
-                          <span class="text-[9px] bg-slate-100 text-slate-500 px-1 py-0.2 rounded font-semibold" x-text="art.group"></span>
+                          <span class="text-[8px] bg-slate-100 text-slate-500 px-1 py-0.2 rounded font-semibold" x-text="art.group"></span>
                         </div>
                         <p class="text-[11px] text-slate-500 truncate max-w-[180px] mt-0.5" x-text="art.statusMessage"></p>
                       </div>
                     </div>
                     
-                    <div class="text-right flex flex-col items-end gap-1">
-                      <span class="text-[9px] bg-pink-100 text-pink-600 font-extrabold px-2.5 py-0.5 rounded-full" x-text="'D+' + art.dDay"></span>
-                      <template x-if="art.unreadCount > 0">
-                        <span class="bg-red-500 text-white text-[9px] font-bold w-4.5 h-4.5 rounded-full flex items-center justify-center animate-bounce" x-text="art.unreadCount"></span>
-                      </template>
-                    </div>
-                  </div>
-                </template>
-              </div>
-            </div>
-
-            <!-- CHATS LIST TAB -->
-            <div x-show="activeTab === 'chats'" class="flex-1 flex flex-col p-4 bg-slate-50/70 space-y-4 chat-scroll overflow-y-auto">
-              <div class="flex justify-between items-center select-none">
-                <h2 class="text-xl font-extrabold text-slate-800">채팅방 목록</h2>
-                <span class="text-lg cursor-pointer">🔔</span>
-              </div>
-
-              <div class="space-y-2">
-                <template x-for="art in artists" :key="art.id">
-                  <div 
-                    @click="handleSelectArtist(art.id)"
-                    class="bg-white rounded-2xl p-3.5 shadow-sm hover:shadow-md transition-all border flex items-center gap-3 cursor-pointer"
-                    :class="art.unreadCount > 0 ? 'border-indigo-200 bg-indigo-50/10' : 'border-slate-100'"
-                  >
-                    <img :src="art.avatar" class="w-12 h-12 rounded-full object-cover border border-slate-200" />
-                    
-                    <div class="flex-1 min-w-0">
-                      <div class="flex justify-between items-baseline mb-0.5">
-                        <span class="font-extrabold text-sm text-slate-800" x-text="art.name"></span>
-                        <span class="text-[8px] text-slate-400 font-semibold shrink-0">오후 9:41</span>
+                    <!-- EDIT/DELETE TRIGGER CONSOLE (3번 요구사항: 수정 및 삭제 버튼) -->
+                    <div class="text-right flex items-center gap-2 select-none shrink-0 ml-2">
+                      <button 
+                        @click.stop="openEditArtistModal(art)" 
+                        class="bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-600 font-bold p-1 px-2.5 rounded-xl text-[10px] transition-all"
+                        title="최애 정보 설정"
+                      >
+                        ⚙️ 관리
+                      </button>
+                      <div class="flex flex-col items-end gap-1">
+                        <span class="text-[9px] bg-pink-100 text-pink-600 font-extrabold px-2 py-0.5 rounded-full" x-text="'D+' + art.dDay"></span>
+                        <template x-if="art.unreadCount > 0">
+                          <span class="bg-red-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center" x-text="art.unreadCount"></span>
+                        </template>
                       </div>
-                      <p class="text-[11px] text-slate-500 truncate pr-4" x-text="parseMessage(art.lastMsg, userName)"></p>
-                    </div>
-
-                    <div class="flex flex-col items-end justify-center shrink-0 min-w-[20px]">
-                      <template x-if="art.unreadCount > 0">
-                        <span class="bg-rose-500 text-white font-black text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center shadow-sm" x-text="art.unreadCount"></span>
-                      </template>
-                      <template x-if="art.unreadCount === 0">
-                        <span class="text-[9px] text-pink-500 font-bold">1</span>
-                      </template>
                     </div>
                   </div>
                 </template>
               </div>
             </div>
-
-            <!-- SETTINGS & TICKET STORE TAB -->
-            <div x-show="activeTab === 'settings'" class="flex-1 flex flex-col p-4 bg-slate-50/70 space-y-4 overflow-y-auto chat-scroll">
-              <h2 class="font-extrabold text-lg text-slate-800">더보기 & 이용권 상점</h2>
-
-              <!-- Ticket Shop Card -->
-              <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 space-y-3">
-                <h3 class="text-xs font-black text-slate-800 border-b pb-2 flex items-center gap-1.5">
-                  🎟️ Lysn bubble 이용권 구매소
-                </h3>
-                <p class="text-[11px] text-slate-500 leading-relaxed">구독권 수를 더 많이 확보하여 최애 아티스트들과 다자간 대화 혜택을 챙기세요!</p>
-                
-                <div class="grid grid-cols-3 gap-2">
-                  <button @click="purchasedTickets += 1; showToast('1인권이 추가로 활성화되었습니다!', 'success')" class="bg-slate-50 hover:bg-slate-100 border rounded-2xl p-2 flex flex-col items-center gap-1">
-                    <span class="text-xs font-black">1인권</span>
-                    <span class="text-[9px] text-pink-500 font-bold">₩4,500</span>
-                  </button>
-                  <button @click="purchasedTickets += 2; showToast('2인권이 추가로 활성화되었습니다!', 'success')" class="bg-slate-50 hover:bg-slate-100 border rounded-2xl p-2 flex flex-col items-center gap-1">
-                    <span class="text-xs font-black">2인권</span>
-                    <span class="text-[9px] text-pink-500 font-bold">₩8,000</span>
-                  </button>
-                  <button @click="purchasedTickets += 3; showToast('3인권이 추가로 활성화되었습니다!', 'success')" class="bg-gradient-to-tr from-pink-100 to-indigo-100 border border-pink-200 rounded-2xl p-2 flex flex-col items-center gap-1">
-                    <span class="text-xs font-black text-indigo-800">3인권</span>
-                    <span class="text-[9px] text-indigo-600 font-bold">₩11,500</span>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Quick Customizer Setting list -->
-              <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 space-y-3">
-                <h3 class="text-xs font-black text-indigo-600 flex items-center gap-1">🛠️ 기념일 설정 조정</h3>
-                <div class="flex justify-between items-center text-xs">
-                  <span class="text-slate-500 font-medium">내 닉네임:</span>
-                  <button @click="tempName = userName; tempStatus = userStatus; isEditingProfile = true" class="font-bold text-indigo-600" x-text="userName"></button>
-                </div>
-                <div class="flex justify-between items-center text-xs">
-                  <span class="text-slate-500 font-medium">한도 글자수:</span>
-                  <span class="font-extrabold text-pink-600" x-text="getCharLimit() + '자'"></span>
-                </div>
-              </div>
-
-              <!-- Local API Key Manager in settings (Mobile size layout support) -->
-              <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 space-y-2.5">
-                <h3 class="text-xs font-black text-amber-500 flex items-center gap-1">🔑 Gemini API 키 설정</h3>
-                <input 
-                  type="password" 
-                  x-model="geminiApiKey" 
-                  @input="saveApiKeyToLocal()"
-                  placeholder="AI 연동용 API Key 입력..." 
-                  class="w-full bg-slate-50 border rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none placeholder-slate-400"
-                />
-                <p class="text-[9px] text-slate-400">
-                  구글 AI 스튜디오에서 발급받은 API 키를 입력하면 나만의 말투 프롬프트와 결합되어, 정형화되지 않은 생생한 실시간 대화를 나눌 수 있습니다.
-                </p>
-              </div>
-
-              <!-- AI Systems Status specifications -->
-              <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 space-y-2">
-                <h3 class="text-xs font-black text-slate-700 border-b pb-1">🤖 탑재된 로컬 지능형 엔진</h3>
-                <div class="text-[10px] text-slate-600 space-y-1">
-                  <p>• <b>실시간 대화 모델</b>: Gemini 2.5 Flash / Custom Personas</p>
-                  <p>• <b>일상 이미지 시각화</b>: Imagen 4.0 Generate</p>
-                  <p>• <b>오디오 신디사이저</b>: Web Speech TTS & Custom Synth</p>
-                </div>
-              </div>
-
-              <p class="text-center text-[10px] text-slate-400">© 2026 bubble custom simulator v3.0.0. All rights reserved.</p>
-            </div>
-
           </div>
 
-          <!-- BOTTOM TAB NAVIGATION BAR -->
-          <div x-show="!inChatRoom" class="bg-white border-t border-slate-100 py-2.5 px-6 flex justify-around items-center select-none z-10 shrink-0">
+          <!-- TAB VIEW: CHATS (CHANNELS LIST) -->
+          <div x-show="!inChatRoom && activeTab === 'chats'" class="flex-1 flex flex-col p-4 bg-slate-50/70 space-y-4 chat-scroll overflow-y-auto" x-transition>
+            <div class="flex justify-between items-center select-none">
+              <h2 class="text-xl font-extrabold text-slate-800">채팅방 목록</h2>
+              <span class="text-lg cursor-pointer">🔔</span>
+            </div>
+
+            <!-- Chat cards list -->
+            <div class="space-y-2">
+              <template x-for="art in artists" :key="art.id">
+                <div 
+                  @click="handleSelectArtist(art.id)"
+                  class="bg-white rounded-2xl p-3.5 shadow-sm hover:shadow-md transition-all border flex items-center gap-3 cursor-pointer"
+                  :class="art.unreadCount > 0 ? 'border-indigo-200 bg-indigo-50/10' : 'border-slate-100'"
+                >
+                  <img :src="art.avatar" class="w-12 h-12 rounded-full object-cover border border-slate-200" />
+                  
+                  <div class="flex-1 min-w-0">
+                    <div class="flex justify-between items-baseline mb-0.5 select-none">
+                      <span class="font-extrabold text-sm text-slate-800" x-text="art.name"></span>
+                      <span class="text-[8px] text-slate-400 font-semibold shrink-0">오후 9:41</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 truncate pr-4" x-text="parseMessage(art.lastMsg, userName)"></p>
+                  </div>
+
+                  <div class="flex flex-col items-end justify-center shrink-0 min-w-[20px] select-none">
+                    <template x-if="art.unreadCount > 0">
+                      <span class="bg-rose-500 text-white font-black text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center shadow-sm" x-text="art.unreadCount"></span>
+                    </template>
+                    <template x-if="art.unreadCount === 0">
+                      <span class="text-[9px] text-pink-500 font-bold">1</span>
+                    </template>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- TAB VIEW: SHOP (2번 요구사항: 독립된 이용권 상점 탭 분리) -->
+          <div x-show="!inChatRoom && activeTab === 'shop'" class="flex-1 flex flex-col p-4 bg-slate-50/70 space-y-4 overflow-y-auto chat-scroll" x-transition>
+            <div class="flex justify-between items-center select-none">
+              <h2 class="text-xl font-black text-slate-800">🛒 버블 이용권 상점</h2>
+              <span class="text-pink-500 font-black text-xs">SALE NOW</span>
+            </div>
+
+            <!-- Voucher ticket purchase cards -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+              <h3 class="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                🎟️ Lysn bubble 이용권 충전
+              </h3>
+              <p class="text-[11px] text-slate-500 leading-normal">구독할 수 있는 버블 이용권을 실시간 추가해보세요.</p>
+              
+              <div class="grid grid-cols-3 gap-2 pt-1 select-none">
+                <button @click="purchasedTickets += 1; showToast('1인권이 추가 충전되었습니다.', 'success')" class="bg-slate-50 hover:bg-slate-100 border border-slate-150 rounded-2xl p-2 flex flex-col items-center gap-1 transition-all">
+                  <span class="text-xs font-black text-slate-700">1인권</span>
+                  <span class="text-[9px] text-pink-500 font-bold">₩4,500</span>
+                </button>
+                <button @click="purchasedTickets += 2; showToast('2인권이 추가 충전되었습니다.', 'success')" class="bg-slate-50 hover:bg-slate-100 border border-slate-150 rounded-2xl p-2 flex flex-col items-center gap-1 transition-all">
+                  <span class="text-xs font-black text-slate-700">2인권</span>
+                  <span class="text-[9px] text-pink-500 font-bold">₩8,000</span>
+                </button>
+                <button @click="purchasedTickets += 3; showToast('3인권이 추가 충전되었습니다.', 'success')" class="bg-gradient-to-tr from-pink-100 to-indigo-100 border border-pink-200 rounded-2xl p-2 flex flex-col items-center gap-1 transition-all shadow-sm">
+                  <span class="text-xs font-black text-indigo-800">3인권</span>
+                  <span class="text-[9px] text-indigo-600 font-bold">₩11,500</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-3.5 space-y-1">
+              <h4 class="text-xs font-black text-indigo-700">💡 이용권 보유자 한정 혜택</h4>
+              <p class="text-[10px] text-slate-600 leading-normal">
+                * 보유한 이용권 수량에 맞추어 아티스트를 중복으로 대칭 소통할 수 있으며, 구독 일수(Days)에 비례해 한도 자수 혜택이 강화됩니다.
+              </p>
+            </div>
+          </div>
+
+          <!-- TAB VIEW: SETTINGS & MORE -->
+          <div x-show="!inChatRoom && activeTab === 'settings'" class="flex-1 flex flex-col p-4 bg-slate-50/70 space-y-4 overflow-y-auto chat-scroll" x-transition>
+            <h2 class="font-extrabold text-lg text-slate-800">⚙️ 더보기 & 설정</h2>
+
+            <!-- Gemini API Key registration box -->
+            <div class="bg-gradient-to-tr from-slate-900 to-indigo-950 rounded-2xl p-4.5 text-white shadow-xl space-y-3">
+              <h3 class="text-xs font-black text-pink-400 flex items-center gap-1">
+                🔑 Gemini API 키 연동 설정
+              </h3>
+              <p class="text-[10px] text-slate-300 leading-normal">
+                연동한 API 키는 본인의 브라우저 내부에서만 구글 AI 서버와 다이렉트로 통신할 때 사용됩니다.
+              </p>
+              <div class="relative">
+                <input 
+                  :type="showKeyOnSettings ? 'text' : 'password'" 
+                  x-model="apiKey"
+                  @input="saveApiKey()"
+                  placeholder="AIzaSy... 입력"
+                  class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 pr-8"
+                />
+                <button @click="showKeyOnSettings = !showKeyOnSettings" class="absolute right-2.5 top-2.5 text-slate-400 hover:text-white transition-all text-xs">
+                  <span x-text="showKeyOnSettings ? '🙈' : '👁️'"></span>
+                </button>
+              </div>
+              <p class="text-[9px] text-slate-400 flex items-center gap-1">
+                <span>* 발급 가이드:</span>
+                <a href="https://aistudio.google.com/" target="_blank" class="text-indigo-400 font-bold underline">구글 AI 스튜디오 이동 ↗</a>
+              </p>
+            </div>
+
+            <!-- Configuration parameters summary -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+              <h3 class="text-xs font-black text-indigo-600 flex items-center gap-1">🛠️ 기념일 정보 조율</h3>
+              <div class="flex justify-between items-center text-xs">
+                <span class="text-slate-500">내 닉네임:</span>
+                <button @click="tempName = userName; tempStatus = userStatus; isEditingProfile = true" class="font-extrabold text-indigo-600 hover:underline" x-text="userName"></button>
+              </div>
+              <div class="flex justify-between items-center text-xs">
+                <span class="text-slate-500">버블 기념일 수:</span>
+                <input type="number" x-model.number="subDays" class="w-16 text-right border bg-slate-50 rounded px-1.5 py-0.5 font-bold text-slate-800" />
+              </div>
+              <div class="flex justify-between items-center text-xs">
+                <span class="text-slate-500">답장 가능 글자 한도:</span>
+                <span class="font-extrabold text-pink-600" x-text="getCharLimit() + '자'"></span>
+              </div>
+            </div>
+
+            <!-- AI Engine specifications status -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-2 select-none">
+              <h3 class="text-xs font-black text-slate-700 border-b pb-1.5 flex items-center gap-1.5">
+                🤖 실시간 탑재 AI 사양
+              </h3>
+              <div class="text-[10px] text-slate-600 space-y-1">
+                <p>• <b>글 생성 모델</b>: Stable `gemini-3-flash` (만료 시 순차 폴백)</p>
+                <p>• <b>사진 갤러리 전달자</b>: AI 맞춤 사진 및 맥락 대조 캡션 생성기</p>
+                <p>• <b>사운드 합성 엔진</b>: Web Audio API &amp; Web Speech 합성</p>
+              </div>
+            </div>
+
+            <p class="text-center text-[10px] text-slate-400">© 2026 bubble sim pro v2.7.1. All rights reserved.</p>
+          </div>
+
+          <!-- MOBILE BOTTOM NAV NAVIGATION BAR -->
+          <div x-show="!inChatRoom" class="bg-white border-t border-slate-100 py-2 px-4 flex justify-around items-center select-none z-10 shrink-0 select-none">
             <button 
               @click="activeTab = 'home'" 
-              class="flex flex-col items-center gap-1 transition-all"
+              class="flex flex-col items-center gap-0.5 transition-all"
               :class="activeTab === 'home' ? 'text-indigo-600 scale-105 font-bold' : 'text-slate-400'"
             >
               <span class="text-lg">👥</span>
-              <span class="text-[10px]">친구</span>
+              <span class="text-[9px]">친구</span>
             </button>
 
             <button 
               @click="activeTab = 'chats'" 
-              class="flex flex-col items-center gap-1 transition-all relative"
+              class="flex flex-col items-center gap-0.5 transition-all relative"
               :class="activeTab === 'chats' ? 'text-indigo-600 scale-105 font-bold' : 'text-slate-400'"
             >
               <span class="text-lg">💬</span>
-              <span class="text-[10px]">채팅</span>
-              <!-- Red badge trigger -->
-              <span x-show="artists.some(a => a.unreadCount > 0)" class="absolute top-0 right-1 w-2 h-2 bg-pink-500 rounded-full animate-ping"></span>
+              <span class="text-[9px]">채팅</span>
+              <!-- Red notification ping indicator -->
+              <span x-show="artists.some(a => a.unreadCount > 0)" class="absolute top-0.5 right-1 w-2 h-2 bg-pink-500 rounded-full animate-ping"></span>
             </button>
 
-            <button @click="isLiveActive = true" class="flex flex-col items-center gap-1 text-rose-500 hover:scale-105 transition-all">
+            <button @click="isLiveActive = true" class="flex flex-col items-center gap-0.5 text-rose-500 hover:scale-105 transition-all">
               <span class="text-lg animate-pulse">🎙️</span>
-              <span class="text-[10px] font-black animate-pulse">보이스</span>
+              <span class="text-[9px] font-black animate-pulse">보이스</span>
+            </button>
+
+            <button 
+              @click="activeTab = 'shop'" 
+              class="flex flex-col items-center gap-0.5 transition-all"
+              :class="activeTab === 'shop' ? 'text-indigo-600 scale-105 font-bold' : 'text-slate-400'"
+            >
+              <span class="text-lg">🛒</span>
+              <span class="text-[9px]">상점</span>
             </button>
 
             <button 
               @click="activeTab = 'settings'" 
-              class="flex flex-col items-center gap-1 transition-all"
+              class="flex flex-col items-center gap-0.5 transition-all"
               :class="activeTab === 'settings' ? 'text-indigo-600 scale-105 font-bold' : 'text-slate-400'"
             >
               <span class="text-lg">⚙️</span>
-              <span class="text-[10px]">더보기</span>
+              <span class="text-[9px]">설정</span>
             </button>
           </div>
 
@@ -892,16 +944,16 @@
 
   </div>
 
-  <!-- Alpine State & Method Logic Implementation -->
+  <!-- Alpine State Management Module -->
   <script>
     document.addEventListener('alpine:init', () => {
       Alpine.data('bubbleApp', () => ({
-        // App Core State variables
+        // App General states
         isSplashScreen: true,
-        appMode: 'sandbox', // 'sandbox' (AI Simulation) or 'live' (Real-time Firebase)
+        appMode: 'sandbox', // 'sandbox' | 'live'
         userRole: 'fan', // 'fan' | 'artist'
         userName: '버블이',
-        userStatus: '오늘도 최애 생각 뿐.. 💙',
+        userStatus: '오늘도 카리나 생각 뿐.. 💙',
         userAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
         selectedArtistId: 'karina',
         inChatRoom: false,
@@ -910,79 +962,47 @@
         chatBg: '#ecf2ff',
         bubbleOpacity: 95,
         activeTab: 'home',
-        
+
+        // API Keys & eye states
+        apiKey: localStorage.getItem('bubble_gemini_api_key') || '',
+        showKeyOnSidebar: false,
+        showKeyOnSettings: false,
+
+        // AI Typings & actions
         isAiTyping: false,
         isGeneratingPhoto: false,
         isEditingProfile: false,
+        isAddingArtist: false,
+        isEditMode: false, // For modular control addition vs modification
         tempName: '버블이',
-        tempStatus: '오늘도 최애 생각 뿐.. 💙',
-        
-        // Custom Live states
+        tempStatus: '오늘도 카리나 생각 뿐.. 💙',
+
+        // Voice Live interactions
         isLiveActive: false,
         liveChatInput: '',
         liveHearts: [],
         toasts: [],
 
-        // Gemini API Configuration
-        geminiApiKey: localStorage.getItem('bubble_gemini_api_key') || '',
-
-        // Add Artist State
-        isAddingArtist: false,
-        newArt: {
+        // Custom creation Form states (4번 요구사항: 갤러리 배열 추가)
+        newArtForm: {
+          id: '',
           name: '',
           group: '',
-          status: '',
           avatar: '',
-          themeColor: '#db2777',
-          dDay: 1,
-          customPrompt: ''
+          statusMessage: '',
+          themeColor: '#4f46e5',
+          systemInstruction: '',
+          gallery: [] // Contains { src: 'base64', desc: 'description' }
         },
-        
-        // Artists Static Data Preset with Custom Prompts for authentic Tiki-Taka
-        artists: [
-          {
-            id: 'karina',
-            name: '카리나',
-            group: 'aespa',
-            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-            statusMessage: '오늘 하루도 파이팅 💙',
-            themeColor: '#4f46e5',
-            dDay: 124,
-            unreadCount: 2,
-            lastMsg: '오늘 커피 마시다가 하늘이 이뻐서 찍었어 💙',
-            customPrompt: '당신은 aespa의 카리나입니다. 팬을 대할 때 매우 사근사근하고, 다정하며 배려심 넘치고 애교 있는 반말 어조를 사용해야 합니다. 고양이 이모티콘(😸, 🐱)과 파란색 하트(💙)를 아주 즐겨 씁니다. 대화는 친밀하고 사적인 일상을 공유하는 톤으로, 문장이 길어지지 않게(2~3문장) 정겨운 연예인의 일상 대화로 응답하세요. 기계적인 AI 느낌은 완전히 배제하세요.'
-          },
-          {
-            id: 'wonbin',
-            name: '원빈',
-            group: 'RIIZE',
-            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-            statusMessage: '연습 중 🎸🥁',
-            themeColor: '#ea580c',
-            dDay: 48,
-            unreadCount: 1,
-            lastMsg: '하루 종일 연습하느라 이제 조금 쉴 틈이 생겨서 바로 왔지 ㅎㅎ 뭐하고 있어?',
-            customPrompt: '당신은 RIIZE의 원빈입니다. 시크해 보이지만 알고 보면 은근히 다정하고 부끄럼 타며 팬을 아끼는 반말 말투를 사용합니다. 기타(🎸) 이모티콘과 스마일, 물결무늬(~)를 자주 사용합니다. 말수가 지나치게 많지 않고 담백하면서도 다정함을 담아 2~3문장 이내로 짧고 예쁘게 응답해 주세요.'
-          },
-          {
-            id: 'chaewon',
-            name: '김채원',
-            group: 'LE SSERAFIM',
-            avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-            statusMessage: '단발 짱 🐯',
-            themeColor: '#db2777',
-            dDay: 312,
-            unreadCount: 0,
-            lastMsg: '오늘 힘든 일 있었으면 다 나한테 털어놓아 봐! 내가 호랑이 기운으로 다 받아쳐 줄게! ❤️',
-            customPrompt: '당신은 LE SSERAFIM의 김채원입니다. 아주 활발하고, 씩씩하며 애교 넘치고 텐션이 높은 귀여운 반말 어조를 사용합니다. 호랑이 이모티콘(🐯)과 빨간 하트(❤️)를 즐겨 씁니다. 리액션과 비타민 같은 긍정 에너지를 가득 담아 활기찬 2~4문장으로 톡톡 튀는 답장을 만들어 주세요.'
-          }
-        ],
 
-        // Sandbox Messages list
+        // Default seed artists database (4번 요구사항: 기본 아티스트별 갤러리 및 설명 설계)
+        artists: [],
+
+        // Seed default messages block
         sandboxMessages: {
           karina: [
             { id: 'k1', senderId: 'karina', senderName: '카리나', text: '안녕 [이름]아! 오늘 하루도 씩씩하게 잘 보내고 있었어? 💙', timestamp: new Date(Date.now() - 3600000).toISOString(), type: 'broadcast' },
-            { id: 'k2', senderId: 'karina', senderName: '카리나', text: '[이름]이 생각나서 버블 슬쩍 켜봤어 ㅎㅎ 맛있는 저녁 같이 정하자! 😸', timestamp: new Date(Date.now() - 3500000).toISOString(), type: 'broadcast', imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop&q=80' }
+            { id: 'k2', senderId: 'karina', senderName: '카리나', text: '[이름]이 생각나서 버블 슬쩍 켜봤어 ㅎㅎ 맛있는 저녁 같이 정하자! 😸', timestamp: new Date(Date.now() - 3500000).toISOString(), type: 'broadcast' }
           ],
           wonbin: [
             { id: 'w1', senderId: 'wonbin', senderName: '원빈', text: '[이름]아 어서와, 오늘 날씨 참 좋더라 🎸', timestamp: new Date(Date.now() - 3600000).toISOString(), type: 'broadcast' },
@@ -994,35 +1014,35 @@
           ]
         },
 
-        // Offline Fallback presets
+        // Offline Fallback systems
         fallbackPool: {
           karina: [
-            { text: "안녕 [이름]아! 오늘 뭐 하고 있었어? 😸" },
-            { text: "날씨가 많이 쌀쌀하니까 옷 따뜻하게 입고 다녀야 해 알았지? 💙" }
+            { text: "안녕 [이름]아! 오늘 맛있는 저녁 뭐먹었엉? 😸" },
+            { text: "날씨가 많이 쌀쌀하니까 꼭 겉옷 챙겨서 따뜻하게 입고 다녀야 해 알았지? 💙" }
           ],
           wonbin: [
-            { text: "[이름]아, 밥 먹었어? ㅎㅎ 🎸" },
-            { text: "오늘 하늘 엄청 예쁘던데 기회 되면 꼭 봐봐!" }
+            { text: "[이름]아, 밥 먹었어? ㅎㅎ 오늘 하루 수고 많았당 🎸" },
+            { text: "오늘 밤하늘 별이 엄청 예쁘던데 기회 되면 꼭 고개 들어서 하늘 한번 봐봐!" }
           ],
           chaewon: [
-            { text: "짜잔-! 🐯 [이름]이 등장!" },
-            { text: "오늘 스케줄 끝나고 퇴근하는 길인데 진짜 보고 싶었어 ㅠㅠ ❤️" }
+            { text: "짜잔-! 🐯 우리 [이름]이 등장했네!" },
+            { text: "오늘 스케줄 진짜 엄청 바빴는데 [이름]이 생각하면서 힘냈어 ㅠㅠ 고마워 ❤️" }
           ]
         },
 
+        // Simulated broadcast reply logs (Artist panel)
         artistConsoleReplies: [
-          { id: 'rep1', fanName: '미니민', text: '오늘 하루 엄청 수고하셨어요!! 푹 쉬기!!', timestamp: new Date().toISOString() },
-          { id: 'rep2', fanName: '민초단원', text: '헐 대박 지금 답장 보낼 수 있다니 꿈만 같아요', timestamp: new Date().toISOString() },
-          { id: 'rep3', fanName: '윈터러브', text: '감기 조심하고 아프지 마요 늘 사랑해요!', timestamp: new Date().toISOString() }
+          { id: 'rep1', fanName: '윈터사랑', text: '오늘 하루도 고생 많았어요!! 푹 쉬기!!', timestamp: new Date().toISOString() },
+          { id: 'rep2', fanName: '민초', text: '지금 메시지 보고 울컥했어요', timestamp: new Date().toISOString() },
+          { id: 'rep3', fanName: '마이카리나', text: '감기 걸리지 말고 푹 자요 사랑해요!', timestamp: new Date().toISOString() }
         ],
 
         liveComments: [
-          { user: '마이카리나', text: '와 대박 라이브 목소리 너무 좋다 ㅠㅠ' },
-          { user: '브리즈원', text: '기타 연주 소리 흘려주세요 제발!' },
-          { user: '피어나라', text: '채원 언니 음색 꿀 뚝뚝 흘러요' }
+          { user: '마이카리나', text: '우와 보이스 라이브 너무 감미롭다' },
+          { user: '브리즈원', text: '기타 코드 하나만 들려주시면 안 되나요' },
+          { user: '피어나라', text: '채원 언니 목소리 녹는다 녹아 진짜' }
         ],
 
-        // Firebase variables
         dbStatus: '연결되지 않음 (가상 샌드박스)',
         liveMessages: [],
         dbInstance: null,
@@ -1030,10 +1050,277 @@
         messageInput: '',
 
         init() {
-          // Splash fade out
+          // Load Custom added artists from localStorage or assign presets
+          const savedCustoms = localStorage.getItem('bubble_custom_artists_data_v4');
+          if (savedCustoms) {
+            try {
+              this.artists = JSON.parse(savedCustoms);
+            } catch(e) {
+              this.loadDefaultPresets();
+            }
+          } else {
+            this.loadDefaultPresets();
+          }
+
+          // Fetch message histories from Local Storage
+          const savedMsgs = localStorage.getItem('bubble_chat_histories_v4');
+          if (savedMsgs) {
+            try {
+              this.sandboxMessages = JSON.parse(savedMsgs);
+            } catch(e) {}
+          }
+
+          // Splash timer
           setTimeout(() => {
             this.isSplashScreen = false;
           }, 1800);
+        },
+
+        loadDefaultPresets() {
+          this.artists = [
+            {
+              id: 'karina',
+              name: '카리나',
+              group: 'aespa',
+              avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+              statusMessage: '오늘 하루도 파이팅 💙',
+              themeColor: '#4f46e5',
+              dDay: 124,
+              unreadCount: 2,
+              lastMsg: '오늘 커피 마시다가 하늘이 이뻐서 찍었어 💙',
+              systemInstruction: "당신은 aespa의 카리나입니다. 버블(Bubble) 1대1 채팅방에서 팬들과 대화하고 있습니다. 팬을 대할 때 매우 사근사근하고, 다정하며 배려심 넘치고 애교 있는 반말 어조를 사용해야 합니다. 고양이 이모티콘(😸, 🐱)과 파란색 하트(💙)를 아주 즐겨 씁니다. 팬의 이름은 '[이름]'으로 치환되거나 유저가 입력한 닉네임으로 불립니다. 대화는 친밀하고 사적인 일상을 공유하는 톤으로, 문장이 길어지지 않게(2~4문장) 정겨운 연예인의 일상 대화로 응답하세요. 기계적인 AI 느낌은 완전히 배제하세요.",
+              gallery: [
+                { src: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop&q=80', desc: '오늘 점심으로 다같이 스케줄 끝나고 먹은 예쁜 샐러드 파스타' },
+                { src: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&auto=format&fit=crop&q=80', desc: '귀여운 강아지가 산책길에서 애교 피우길래 나도 모르게 찍은 강아지 뒷모습' },
+                { src: 'https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?w=400&auto=format&fit=crop&q=80', desc: '예쁜 컵에 담긴 시원한 아이스 카페라떼랑 초코 케이크' }
+              ]
+            },
+            {
+              id: 'wonbin',
+              name: '원빈',
+              group: 'RIIZE',
+              avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+              statusMessage: '연습 중 🎸🥁',
+              themeColor: '#ea580c',
+              dDay: 48,
+              unreadCount: 1,
+              lastMsg: '하루 종일 연습하느라 이제 조금 쉴 틈이 생겨서 바로 왔지 ㅎㅎ 뭐하고 있어?',
+              systemInstruction: "당신은 RIIZE의 원빈입니다. 버블(Bubble) 1대1 채팅방에서 팬들과 소통하고 있습니다. 시크해 보이지만 알고 보면 은근히 다정하고 부끄럼 타며 팬을 아끼는 반말 말투를 사용합니다. 기타(🎸) 이모티콘과 스마일, 물결무늬(~)를 자주 사용합니다. 음악, 노래 추천, 악기 연습 이야기나 소박한 일상(오늘 먹은 것, 산책 등)을 다정하게 나누는 톤입니다. 말수가 지나치게 많지 않고 담백하면서도 다정함을 담아 2~3문장 이내로 짧고 예쁘게 응답해 주세요.",
+              gallery: [
+                { src: 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=400&auto=format&fit=crop&q=80', desc: '대기실 조명 밑에 시크하게 놓인 나의 갈색 어쿠스틱 기타' },
+                { src: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=400&auto=format&fit=crop&q=80', desc: '오늘 새벽 일찍 일어나 한강공원 산책 가다 찍은 은은한 여명 하늘' }
+              ]
+            },
+            {
+              id: 'chaewon',
+              name: '김채원',
+              group: 'LE SSERAFIM',
+              avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+              statusMessage: '단발 짱 🐯',
+              themeColor: '#db2777',
+              dDay: 312,
+              unreadCount: 0,
+              lastMsg: '오늘 힘든 일 있었으면 다 나한테 털어놓아 봐! 내가 호랑이 기운으로 다 받아쳐 줄게! ❤️',
+              systemInstruction: "당신은 LE SSERAFIM의 김채원입니다. 버블(Bubble) 1대1 채팅방에서 팬들과 대화하고 있습니다. 아주 활발하고, 씩씩하며 애교 넘치고 텐션이 높은 귀여운 반말 어조를 사용합니다. 호랑이 이모티콘(🐯)과 빨간 하트(❤️)를 즐겨 씁니다. 유저를 놀리거나 아주 반가워하는 씩씩하고 밝은 리액션을 탑재하여 이야기해야 합니다. 장난스러운 리액션과 비타민 같은 긍정 에너지를 가득 담아 활기찬 2~4문장으로 톡톡 튀는 답장을 만들어 주세요.",
+              gallery: [
+                { src: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?w=400&auto=format&fit=crop&q=80', desc: '연습 끝나고 먹은 쫀득쫀득 촉촉한 생초콜릿 도넛 조각' },
+                { src: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=400&auto=format&fit=crop&q=80', desc: '무대 조명이 화려하게 비추는 우리 콘서트 백스테이지 슬쩍 찍은 모습' }
+              ]
+            }
+          ];
+        },
+
+        saveApiKey() {
+          localStorage.setItem('bubble_gemini_api_key', this.apiKey);
+        },
+
+        // 5번 요구사항: Base64 이미지 다이렉트 파일 업로드 구현
+        handleImageUpload(event, type) {
+          const files = event.target.files;
+          if (!files || files.length === 0) return;
+
+          if (type === 'avatar') {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              this.newArtForm.avatar = e.target.result;
+            };
+            reader.readAsDataURL(files[0]);
+          } else if (type === 'gallery') {
+            // Support multiple files upload
+            for (let i = 0; i < files.length; i++) {
+              const reader = new FileReader();
+              const fName = files[i].name.split('.')[0];
+              reader.onload = (e) => {
+                this.newArtForm.gallery.push({
+                  src: e.target.result,
+                  desc: `${fName} 소소한 일상`
+                });
+              };
+              reader.readAsDataURL(files[i]);
+            }
+          }
+        },
+
+        handleUserAvatarUpload(event) {
+          const file = event.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            this.userAvatar = e.target.result;
+            this.tempAvatar = e.target.result;
+          };
+          reader.readAsDataURL(file);
+        },
+
+        applyPersonaPreset(type) {
+          if (type === 'sweet') {
+            this.newArtForm.systemInstruction = "매우 다정하고 애정 표현을 듬뿍 담은 연인 느낌의 반말 말투를 구사합니다. 고양이 이모티콘(😸)과 분홍색, 파란색 하트(❤️, 💙)를 문장 뒤에 필수로 붙이고, 늘 유저를 아껴주는 연인 어투입니다. 대화는 2~4문장으로 짧고 유기적으로 티키타카 합니다.";
+            this.newArtForm.statusMessage = "오늘도 보고 싶어 자기야... 💕";
+          } else if (type === 'tsundere') {
+            this.newArtForm.systemInstruction = "말투는 시크하고 퉁명스러운 츤데레 남사친/여사친 어법입니다. 처음엔 '흥', '귀찮게 왜'라며 퉁명스럽지만 결국 뒤에는 유저를 다정하게 챙기는 멘트를 추가합니다. 물결무늬(~)를 자주 쓰고 기타(🎸)나 별(⭐) 이모티콘을 사용합니다.";
+            this.newArtForm.statusMessage = "귀찮게 또 왔냐? 🎸";
+          } else if (type === 'senior') {
+            this.newArtForm.systemInstruction = "차분하고 따뜻하며 존댓말을 사용하는 다정한 선배 말투입니다. 유저의 오늘 힘든 점을 배려해 보듬어 주며, 부드러운 웃음(ㅎㅎ, ^^)을 자주 보냅니다. 한 줄 한 줄 배려 깊은 질문을 던집니다.";
+            this.newArtForm.statusMessage = "언제든 기댈 수 있어요 ☕";
+          } else if (type === 'buddy') {
+            this.newArtForm.systemInstruction = "텐션이 높고 쉴 새 없이 드립치며 유쾌하게 괴롭히는 고등학교 단짝친구 말투입니다. 'ㅋㅋㅋ'를 연사하며 익살스러운 이모티콘(🤪, ⚡, 💥)을 사용하고, 유저에게 장난치며 지루할 틈을 주지 않습니다.";
+            this.newArtForm.statusMessage = "오늘 드립 장전 끝! 🤪";
+          }
+          this.showToast('말투 프리셋 가이드가 자동 주입되었습니다!');
+        },
+
+        // 3번 요구사항: 프로필 신규 등록 및 수정 분기 제어
+        openAddArtistModal() {
+          this.isEditMode = false;
+          this.newArtForm = {
+            id: '',
+            name: '',
+            group: '',
+            avatar: '',
+            statusMessage: '',
+            themeColor: '#4f46e5',
+            systemInstruction: '',
+            gallery: []
+          };
+          this.isAddingArtist = true;
+        },
+
+        openEditArtistModal(art) {
+          this.isEditMode = true;
+          // Deep copy artist profile
+          this.newArtForm = {
+            id: art.id,
+            name: art.name,
+            group: art.group,
+            avatar: art.avatar,
+            statusMessage: art.statusMessage,
+            themeColor: art.themeColor,
+            systemInstruction: art.systemInstruction || `당신은 ${art.name}입니다. 친절하고 다정한 연예인의 반말로 정겹게 대화합니다.`,
+            gallery: art.gallery ? JSON.parse(JSON.stringify(art.gallery)) : []
+          };
+          this.isAddingArtist = true;
+        },
+
+        saveCustomArtist() {
+          const f = this.newArtForm;
+          if (!f.name.trim()) {
+            this.showToast('아티스트의 이름을 반드시 입력해 주세요!', 'warning');
+            return;
+          }
+
+          const fallbackImg = f.avatar.trim() || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+          
+          if (this.isEditMode) {
+            // Update mode
+            const target = this.artists.find(a => a.id === f.id);
+            if (target) {
+              target.name = f.name;
+              target.group = f.group;
+              target.avatar = fallbackImg;
+              target.statusMessage = f.statusMessage;
+              target.themeColor = f.themeColor;
+              target.systemInstruction = f.systemInstruction;
+              target.gallery = f.gallery;
+            }
+            this.showToast(`[${f.name}]의 프로필 설정이 업데이트되었습니다.`, 'success');
+          } else {
+            // Registration mode
+            const newId = `custom-${Date.now()}`;
+            const customObj = {
+              id: newId,
+              name: f.name.trim(),
+              group: f.group.trim() || 'SOLO',
+              avatar: fallbackImg,
+              statusMessage: f.statusMessage.trim() || '반가워요!',
+              themeColor: f.themeColor.trim() || '#4f46e5',
+              dDay: 1,
+              unreadCount: 0,
+              lastMsg: '구독방이 활성화되었습니다. 첫 마디를 보내보세요!',
+              systemInstruction: f.systemInstruction.trim() || `당신은 ${f.name}입니다. 친절하고 다정한 연예인의 반말로 정겹게 대화합니다.`,
+              gallery: f.gallery
+            };
+
+            this.artists.push(customObj);
+            this.sandboxMessages[newId] = [
+              { id: `wel-${Date.now()}`, senderId: newId, senderName: f.name, text: `반가워! 드디어 대화하게 되었네 💖 앞으로 매일 티키타카 나누자!`, timestamp: new Date().toISOString(), type: 'broadcast' }
+            ];
+            this.showToast(`나만의 최애 [${f.name}] 구독방이 개설되었습니다!`, 'success');
+          }
+
+          // Persist data
+          localStorage.setItem('bubble_custom_artists_data_v4', JSON.stringify(this.artists));
+          localStorage.setItem('bubble_chat_histories_v4', JSON.stringify(this.sandboxMessages));
+          this.isAddingArtist = false;
+        },
+
+        deleteArtist(id) {
+          if (!confirm('정말로 이 아티스트의 구독을 해지(삭제)하시겠습니까? 대화 내용도 영구히 삭제됩니다.')) return;
+          
+          this.artists = this.artists.filter(a => a.id !== id);
+          delete this.sandboxMessages[id];
+          
+          localStorage.setItem('bubble_custom_artists_data_v4', JSON.stringify(this.artists));
+          localStorage.setItem('bubble_chat_histories_v4', JSON.stringify(this.sandboxMessages));
+          
+          this.isAddingArtist = false;
+          this.inChatRoom = false;
+          this.showToast('아티스트 구독 해지가 완료되었습니다.', 'info');
+        },
+
+        async callGeminiAPI(contents, systemInstruction) {
+          const apiModels = ['gemini-3-flash', 'gemini-2.5-flash', 'gemini-1.5-flash'];
+          let finalError = null;
+
+          for (const model of apiModels) {
+            try {
+              const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${this.apiKey}`;
+              const payload = {
+                contents: contents,
+                systemInstruction: { parts: [{ text: systemInstruction }] },
+                generationConfig: { temperature: 0.85, maxOutputTokens: 150 }
+              };
+
+              const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              });
+
+              if (res.ok) {
+                const json = await res.json();
+                const responseText = json.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (responseText) {
+                  return { text: responseText, modelUsed: model };
+                }
+              } else {
+                const errDetail = await res.json().catch(() => ({}));
+                finalError = errDetail.error?.message || `HTTP ${res.status}`;
+              }
+            } catch(e) {
+              finalError = e.message;
+            }
+          }
+          throw new Error(finalError || "All models returned bad states");
         },
 
         showToast(message, type = 'info') {
@@ -1041,7 +1328,7 @@
           this.toasts.push({ id, message, type });
           setTimeout(() => {
             this.toasts = this.toasts.filter(t => t.id !== id);
-          }, 4000);
+          }, 4500);
         },
 
         activeArtist() {
@@ -1057,10 +1344,8 @@
         handleSelectArtist(id) {
           this.selectedArtistId = id;
           this.inChatRoom = true;
-          // Clear notification count
           const art = this.artists.find(a => a.id === id);
           if (art) art.unreadCount = 0;
-          
           this.scrollChatToBottom();
         },
 
@@ -1095,86 +1380,7 @@
           }
         },
 
-        saveApiKeyToLocal() {
-          localStorage.setItem('bubble_gemini_api_key', this.geminiApiKey);
-        },
-
-        openAddArtistModal() {
-          this.newArt = {
-            name: '',
-            group: '',
-            status: '버블에 온 걸 환영해! ✨',
-            avatar: '',
-            themeColor: '#db2777',
-            dDay: 1,
-            customPrompt: ''
-          };
-          this.isAddingArtist = true;
-        },
-
-        applyPreset(presetType) {
-          if (presetType === '츤데레') {
-            this.newArt.customPrompt = "당신은 무심하지만 은근히 챙겨주는 츤데레 남사친 성격의 아이돌입니다. 팬을 부를 때 무심하게 반말을 씁니다. 대답은 조금 틱틱거리지만 걱정 어린 따뜻함이 가득 배어있어야 합니다. 이모지나 물결은 거의 쓰지 않고 담백하게 대답합니다. '바보냐', '걱정되게 진짜' 같은 표현을 은연중에 씁니다.";
-          } else if (presetType === '다정연상') {
-            this.newArt.customPrompt = "당신은 어른스럽고 온화하며 깊은 배려심을 가진 다정다감한 성격의 아티스트입니다. 나긋나긋하고 차분한 반말을 사용하며 팬의 일상에 깊이 공감해 줍니다. 힘든 일이 있었다고 하면 한없이 위로해 주며 든든한 버팀목이 되어 줍니다. 하트 이모티콘(🌸, 💕)을 즐겨 씁니다.";
-          } else if (presetType === '애교댕댕') {
-            this.newArt.customPrompt = "당신은 애교가 철철 넘치고 항상 에너지가 충만한 하이텐션 댕댕이 성격의 아티스트입니다. 반말을 사용하며 혀 짧은 소리나 '웅', '넹', '앙' 등의 귀여운 어미를 많이 사용합니다. 느낌표(!)를 한 문장에 여러 개씩 남발하고, 귀여운 동물이나 우는 얼굴 등의 이모티콘을 쏟아붓습니다. 쉴 틈 없이 조잘거리는 조잘이입니다.";
-          } else if (presetType === '차분소심') {
-            this.newArt.customPrompt = "당신은 조용하고 내성적이지만 팬 한 명 한 명을 진심으로 아끼는 소심한 아티스트입니다. 상냥한 존댓말을 기본으로 사용합니다. 조금 부끄러움을 타는 듯 조심스럽게 문장을 씁니다. 대화체는 언제나 부드럽고 수줍어하며 가끔은 질문을 던지며 티키타카를 유도합니다. 이모지로는 (..*, 🍃, 🧸)를 소소하게 씁니다.";
-          }
-          this.showToast(`${presetType} 말투 프리셋이 완성되었습니다!`);
-        },
-
-        submitNewArtist() {
-          if (!this.newArt.name.trim() || !this.newArt.group.trim()) {
-            this.showToast('이름과 그룹명은 필수입니다!', 'warning');
-            return;
-          }
-          if (!this.newArt.customPrompt.trim()) {
-            this.showToast('성격 및 말투 프롬프트를 적어주세요!', 'warning');
-            return;
-          }
-
-          const generatedId = 'custom-' + Date.now();
-          const avatarUrl = this.newArt.avatar.trim() || `https://placehold.co/150x150/ffedf5/db2777?text=${encodeURIComponent(this.newArt.name)}`;
-
-          // Create new artist entry
-          const newArtistObj = {
-            id: generatedId,
-            name: this.newArt.name,
-            group: this.newArt.group,
-            avatar: avatarUrl,
-            statusMessage: this.newArt.status || '오늘도 찾아와 줘서 고마워 💕',
-            themeColor: this.newArt.themeColor,
-            dDay: this.newArt.dDay || 1,
-            unreadCount: 0,
-            lastMsg: '우리 첫 버블 대화 시작해볼까? 💖',
-            customPrompt: this.newArt.customPrompt
-          };
-
-          // Append to state
-          this.artists.push(newArtistObj);
-          
-          // Setup starter messages
-          this.sandboxMessages[generatedId] = [
-            {
-              id: `welcome-${Date.now()}`,
-              senderId: generatedId,
-              senderName: this.newArt.name,
-              text: `안녕 [이름]아! 💖 드디어 우리 1대1 메시지 방이 열렸네! 앞으로 매일 재미있게 놀아보자!`,
-              timestamp: new Date().toISOString(),
-              type: 'broadcast'
-            }
-          ];
-
-          this.isAddingArtist = false;
-          this.showToast(`${this.newArt.name} 님이 아티스트로 성공적으로 탄생했습니다!`, 'success');
-          
-          // Auto enter
-          this.handleSelectArtist(generatedId);
-        },
-
-        // Web Audio Chime Sound Maker
+        // Web Audio Synthesized Chimes
         playSound(type) {
           try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -1185,8 +1391,8 @@
               const osc = ctx.createOscillator();
               const gain = ctx.createGain();
               osc.type = 'sine';
-              osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-              osc.frequency.exponentialRampToValueAtTime(783.99, ctx.currentTime + 0.15); // G5
+              osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+              osc.frequency.exponentialRampToValueAtTime(783.99, ctx.currentTime + 0.15);
               gain.gain.setValueAtTime(0.12, ctx.currentTime);
               gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
               osc.connect(gain);
@@ -1209,7 +1415,7 @@
               const osc = ctx.createOscillator();
               const gain = ctx.createGain();
               osc.type = 'sine';
-              osc.frequency.setValueAtTime(880, ctx.currentTime); 
+              osc.frequency.setValueAtTime(880, ctx.currentTime);
               osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.08);
               gain.gain.setValueAtTime(0.1, ctx.currentTime);
               gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
@@ -1218,18 +1424,15 @@
               osc.start();
               osc.stop(ctx.currentTime + 0.15);
             }
-          } catch (e) {
-            console.debug("Sound generation blocked/unsupported", e);
-          }
+          } catch (e) {}
         },
 
-        // Send fan message
         sendMessage() {
           if (!this.messageInput.trim()) return;
 
-          const limit = this.getCharLimit();
-          if (this.messageInput.length > limit) {
-            this.showToast(`구독일차의 전송 제한 글자 수는 ${limit}자입니다!`, 'warning');
+          const maxLimit = this.getCharLimit();
+          if (this.messageInput.length > maxLimit) {
+            this.showToast(`구독 기준 최대 전송 가능 글자 수는 ${maxLimit}자입니다!`, 'warning');
             return;
           }
 
@@ -1246,13 +1449,15 @@
 
           if (this.appMode === 'sandbox') {
             this.sandboxMessages[this.selectedArtistId].push(newMsg);
-            const copyInput = this.messageInput;
+            const userContent = this.messageInput;
             this.messageInput = '';
             this.scrollChatToBottom();
+            
+            localStorage.setItem('bubble_chat_histories_v4', JSON.stringify(this.sandboxMessages));
 
-            // Fire AI Generation
+            // Call Gemini
             setTimeout(() => {
-              this.fetchGeminiArtistResponse(this.selectedArtistId, copyInput);
+              this.fetchGeminiArtistResponse(this.selectedArtistId, userContent);
             }, 1000);
           } else {
             this.saveMessageToFirebase(newMsg);
@@ -1260,75 +1465,40 @@
           }
         },
 
-        // exponential backoff helper
-        async fetchWithBackoff(url, options, retries = 3, delay = 1000) {
-          try {
-            const response = await fetch(url, options);
-            if (!response.ok) {
-              if (response.status === 429 && retries > 0) {
-                await new Promise(resolve => setTimeout(resolve, delay));
-                return this.fetchWithBackoff(url, options, retries - 1, delay * 2);
-              }
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response;
-          } catch (error) {
-            if (retries > 0) {
-              await new Promise(resolve => setTimeout(resolve, delay));
-              return this.fetchWithBackoff(url, options, retries - 1, delay * 2);
-            }
-            throw error;
-          }
-        },
-
-        // Unified Gemini AI Text Response Call with Custom Prompt Integration & Tiki-Taka Rule Set
         async fetchGeminiArtistResponse(artistId, userMsg) {
-          this.isAiTyping = true;
-          this.scrollChatToBottom();
-
-          const artist = this.artists.find(a => a.id === artistId);
-          const baseInstruction = artist ? artist.customPrompt : "친근하고 다정한 아이돌 어투를 구사하십시오.";
-
-          // Strict Tiki-Taka instruction appended dynamically to prevent robotic/repetitive behavior
-          const systemInstruction = `${baseInstruction}
-          [핵심 대화 가이드라인 - 자연스러운 티키타카 형성]
-          1. 사용자가 방금 보낸 메시지(${userMsg})의 내용에 깊이 반응하고 리액션을 먼저 해주세요.
-          2. 대답은 반드시 실제 연예인의 버블 메시지처럼 자연스러운 구어체와 줄바꿈을 사용하여 2~3줄 이내로 짧고 친근하게 작성하십시오. 절대 기계처럼 단조롭거나 긴 단락을 보내지 마세요.
-          3. 대화 흐름이 끊기지 않도록, 리액션을 하고 난 후 사용자의 관심사나 가벼운 질문을 새로 던져 유기적인 티키타카를 형성하세요.
-          4. 메시지 본문에 팬의 이름을 넣고 싶다면 반드시 '[이름]' 이라는 플레이스홀더 텍스트를 그대로 사용하여 문장에 넣어주세요. 시스템이 알아서 실제 팬 닉네임으로 치환해 말해 줍니다.`;
-
-          // API Key fallback logic
-          const apiKey = this.geminiApiKey.trim() || ""; 
+          const art = this.artists.find(a => a.id === artistId) || this.activeArtist();
           
-          if (!apiKey) {
-            // Simulated local intelligence fallback if no key is set
+          if (!this.apiKey.trim()) {
+            this.isAiTyping = true;
+            this.scrollChatToBottom();
             setTimeout(() => {
-              this.isAiTyping = false;
               this.playSound('receive');
-              const pool = this.fallbackPool[artistId] || [
-                { text: `와아 [이름]아! 방금 메시지 보고 엄청 웃었어 ㅋㅋ 오늘 진짜 귀엽네!` },
-                { text: `응응 맞아 ㅎㅎ 그나저나 [이름]이는 오늘 뭐 먹었어? 추천 하나만 해주라!` }
-              ];
-              const randomMsg = pool[Math.floor(Math.random() * pool.length)];
-              const textClean = randomMsg.text;
+              const arr = this.fallbackPool[artistId] || this.fallbackPool.karina;
+              const rnd = arr[Math.floor(Math.random() * arr.length)];
+              const responseText = rnd.text;
 
               this.sandboxMessages[artistId].push({
-                id: `fallback-ai-${Date.now()}`,
+                id: `fallback-${Date.now()}`,
                 senderId: artistId,
-                senderName: artist ? artist.name : '최애',
-                text: textClean,
+                senderName: art.name,
+                text: responseText,
                 timestamp: new Date().toISOString(),
                 type: 'broadcast'
               });
 
-              if (artist) artist.lastMsg = textClean;
+              art.lastMsg = responseText;
+              this.isAiTyping = false;
+              this.showToast('API 키 미등록: 가상 백업 응답으로 티키타카를 보존합니다.', 'info');
               this.scrollChatToBottom();
-            }, 1500);
+              localStorage.setItem('bubble_chat_histories_v4', JSON.stringify(this.sandboxMessages));
+            }, 1200);
             return;
           }
 
-          // Use the verified stable Gemini 2.5 Flash model
-          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+          this.isAiTyping = true;
+          this.scrollChatToBottom();
+
+          const sysPrompt = art.systemInstruction || `당신은 아이돌 ${art.name}입니다. 친절하고 다정하게 대답하세요.`;
 
           const history = this.sandboxMessages[artistId].slice(-6).map(m => ({
             role: m.senderId === 'fan' ? 'user' : 'model',
@@ -1341,153 +1511,130 @@
           });
 
           try {
-            const payload = {
-              contents: history,
-              systemInstruction: { parts: [{ text: systemInstruction }] },
-              generationConfig: { temperature: 0.9, maxOutputTokens: 180 }
-            };
+            const result = await this.callGeminiAPI(history, sysPrompt);
+            const answerClean = result.text.trim();
 
-            const response = await this.fetchWithBackoff(apiUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
+            this.playSound('receive');
+            const isVoice = Math.random() > 0.85;
+
+            this.sandboxMessages[artistId].push({
+              id: `gemini-${Date.now()}`,
+              senderId: artistId,
+              senderName: art.name,
+              text: answerClean,
+              timestamp: new Date().toISOString(),
+              type: 'broadcast',
+              isVoice: isVoice,
+              voiceDuration: isVoice ? '0:05' : null
             });
 
-            const result = await response.json();
-            const textResponse = result.candidates?.[0]?.content?.parts?.[0]?.text;
+            art.lastMsg = answerClean;
+            localStorage.setItem('bubble_chat_histories_v4', JSON.stringify(this.sandboxMessages));
 
-            if (textResponse) {
-              this.playSound('receive');
-              const isVoice = Math.random() > 0.8;
-              const textClean = textResponse.trim();
+          } catch(e) {
+            console.error("Critical API Error on generation:", e);
+            this.showToast("API 한도 초과: 백업 응답으로 조치합니다.", 'warning');
+            
+            const arr = this.fallbackPool[artistId] || this.fallbackPool.karina;
+            const rnd = arr[Math.floor(Math.random() * arr.length)];
+            const responseText = rnd.text;
 
-              this.sandboxMessages[artistId].push({
-                id: `gemini-art-${Date.now()}`,
-                senderId: artistId,
-                senderName: artist ? artist.name : '최애',
-                text: textClean,
-                timestamp: new Date().toISOString(),
-                type: 'broadcast',
-                isVoice: isVoice,
-                voiceDuration: isVoice ? '0:05' : null
-              });
+            this.sandboxMessages[artistId].push({
+              id: `fallback-err-${Date.now()}`,
+              senderId: artistId,
+              senderName: art.name,
+              text: responseText,
+              timestamp: new Date().toISOString(),
+              type: 'broadcast'
+            });
 
-              // Update last msg card snippet
-              if (artist) {
-                artist.lastMsg = textClean;
-                if (!this.inChatRoom || this.selectedArtistId !== artistId) {
-                  artist.unreadCount += 1;
-                }
-              }
-            } else {
-              throw new Error("No candidates received");
-            }
-
-          } catch (error) {
-            console.error("Gemini Custom API Error:", error);
-            this.showToast("API 요청에 실패하여 로컬 백업 응답 모드로 처리합니다.", "warning");
+            art.lastMsg = responseText;
+            localStorage.setItem('bubble_chat_histories_v4', JSON.stringify(this.sandboxMessages));
           } finally {
             this.isAiTyping = false;
             this.scrollChatToBottom();
           }
         },
 
-        // Request Surprise Photo Gift from Artist (Structured output via Gemini & Imagen-4)
+        // 4번 요구사항: 아티스트 프로필 내 로컬 갤러리 이미지 선택 및 코멘트 정밀 생성 연동
         async requestArtistPhotoGift() {
           if (this.isGeneratingPhoto) return;
-          this.isGeneratingPhoto = true;
-          this.isAiTyping = true;
-          this.showToast(`${this.activeArtist().name} 님이 갤러리 뒤적거리는 중... 📸`, 'info');
-          this.scrollChatToBottom();
+          const art = this.activeArtist();
 
-          const apiKey = this.geminiApiKey.trim() || "";
-          
-          if (!apiKey) {
-            setTimeout(() => {
-              this.isGeneratingPhoto = false;
-              this.isAiTyping = false;
-              this.showToast('API Key를 등록해야 고화질 AI Imagen 사진을 수신할 수 있습니다!', 'warning');
-            }, 1500);
+          // 갤러리가 완전히 비어있을 경우 예외 처리
+          if (!art.gallery || art.gallery.length === 0) {
+            this.showToast(`[${art.name}]의 갤러리 보관함에 사진이 한 장도 없습니다! 프로필 수정에서 일상 사진들을 먼저 추가해 주세요.`, 'warning');
             return;
           }
 
-          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+          if (!this.apiKey.trim()) {
+            this.showToast('Gemini API 키가 설정되지 않아 사진 매칭 기능을 시작할 수 없습니다!', 'warning');
+            return;
+          }
 
-          const promptInstructions = `당신은 ${this.activeArtist().name}(${this.activeArtist().group} 소속)의 버블 아이돌 대화 중입니다. 
-          오늘 팬을 위해 전송할 따뜻하고 세련된 일상 사진을 구상하고 있습니다. 
-          다음 2가지 속성을 담아 반드시 완벽한 JSON 오브젝트로만 반환하세요:
-          1. "caption": 사진을 건네며 팬에게 보낼 아주 귀엽고 다정한 한국어 한마디 (예: "오늘 커피 마시다가 하늘이 이뻐서 찍었어 💙")
-          2. "imagePrompt": 이 사진을 고화질 극사실주의 일상 인화지 사진 느낌으로 생성하기 위한 상세한 영어 Imagen 프롬프트 (예: "A high-quality aesthetic cozy photo of a delicious iced latte with cute cat-shaped foam on a marble coffee table in a modern minimal cafe, soft natural sunshine, polaroid style, 4k resolution")`;
+          this.isGeneratingPhoto = true;
+          this.isAiTyping = true;
+          this.showToast(`${art.name} 님이 어울리는 사진을 고르고 멘트를 쓰는 중... 📸`, 'info');
+          this.scrollChatToBottom();
+
+          // 갤러리 인덱스 리스트를 묘사와 함께 정리하여 프롬프트로 바인딩
+          const galleryDescriptions = art.gallery.map((item, index) => {
+            return `[사진 번호: ${index}] - 상황 설명 및 분위기: ${item.desc}`;
+          }).join('\n');
+
+          const promptBuilder = `당신은 ${art.name}(${art.group} 소속) 버블 대화 파트너입니다.
+          현재 당신이 보유하고 있는 개인 일상 갤러리의 사진 목록은 다음과 같습니다:
+          ${galleryDescriptions}
+
+          이 중 오늘 소중한 팬([이름])에게 서프라이즈로 공유하기에 가장 로맨틱하거나 자연스럽고 어울리는 사진 하나를 골라주세요.
+          반드시 아래 2가지 속성을 담아 완벽한 JSON 오브젝트 구조로만 반환하세요 (마크다운 금지, 순수 JSON만 반환):
+          1. "selectedIndex": 고른 사진의 배열 인덱스 번호 (예: 0, 1 등 단일 정수)
+          2. "caption": 팬에게 해당 사진을 건네며 보낼 아주 자연스럽고 애정 가득한 일상 대화형 한마디 (예: "오늘 커피 마시다가 창가 햇살이 너무 포근해서 [이름]이 생각났어 💙")`;
 
           try {
-            const geminiPayload = {
-              contents: [{ parts: [{ text: promptInstructions }] }],
-              generationConfig: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                  type: "OBJECT",
-                  properties: {
-                    caption: { type: "STRING" },
-                    imagePrompt: { type: "STRING" }
-                  },
-                  required: ["caption", "imagePrompt"]
-                }
-              }
-            };
-
-            const geminiRes = await this.fetchWithBackoff(geminiUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(geminiPayload)
-            });
-            const geminiJson = await geminiRes.json();
-            const textRaw = geminiJson.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!textRaw) throw new Error("No Gemini schema parsed");
+            const rawGeminiResponse = await this.callGeminiAPI([{ role: 'user', parts: [{ text: promptBuilder }] }], "You must return a raw JSON object.");
             
-            const parsed = JSON.parse(textRaw);
-            const captionVal = parsed.caption || "예쁜 사진 선물 보낼게! 💙";
-            const promptVal = parsed.imagePrompt || "A gorgeous minimal Korean background aesthetic with soft warm lighting, cozy mood";
+            let jsonClean = rawGeminiResponse.text.replace(/```json/g, '').replace(/```/g, '').trim();
+            const parsed = JSON.parse(jsonClean);
 
-            // Call Imagen-4
-            const imagenUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
-            const imagenPayload = {
-              instances: [{ prompt: promptVal }],
-              parameters: { sampleCount: 1 }
-            };
+            const pickedIndex = parseInt(parsed.selectedIndex) || 0;
+            const captionValue = parsed.caption || "예쁜 사진 선물 도착했어! 💙";
 
-            const imagenRes = await this.fetchWithBackoff(imagenUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(imagenPayload)
+            // 해당 인덱스의 실제 업로드된 로컬 사진 추출
+            const pickedPhoto = art.gallery[pickedIndex] || art.gallery[0];
+
+            this.playSound('receive');
+
+            this.sandboxMessages[this.selectedArtistId].push({
+              id: `gift-img-${Date.now()}`,
+              senderId: this.selectedArtistId,
+              senderName: art.name,
+              text: captionValue,
+              imageUrl: pickedPhoto.src, // Base64 파일 또는 주소 바인딩
+              timestamp: new Date().toISOString(),
+              type: 'broadcast'
             });
-            const imagenJson = await imagenRes.json();
-            const bytesBase64 = imagenJson.predictions?.[0]?.bytesBase64Encoded;
 
-            if (bytesBase64) {
-              const imageSource = `data:image/png;base64,${bytesBase64}`;
-              this.playSound('receive');
+            art.lastMsg = `📸 [사진] ${captionValue}`;
+            this.showToast("최애가 갤러리 보관함에서 정성껏 고른 사진이 도착했습니다! ✨", 'success');
+            localStorage.setItem('bubble_chat_histories_v4', JSON.stringify(this.sandboxMessages));
 
-              this.sandboxMessages[this.selectedArtistId].push({
-                id: `photo-gift-${Date.now()}`,
-                senderId: this.selectedArtistId,
-                senderName: this.activeArtist().name,
-                text: captionVal,
-                imageUrl: imageSource,
-                timestamp: new Date().toISOString(),
-                type: 'broadcast'
-              });
-
-              const art = this.artists.find(a => a.id === this.selectedArtistId);
-              if (art) art.lastMsg = `📸 [사진] ${captionVal}`;
-
-              this.showToast("새 사진 선물이 도착했습니다! 🥰", 'success');
-            } else {
-              throw new Error("No image data returned");
-            }
-
-          } catch (e) {
-            console.error("Visual generation failed:", e);
-            this.showToast("서버가 혼잡해 사진을 고르지 못했습니다. 잠시 후 시도하세요!", 'warning');
+          } catch(e) {
+            console.error("Visual delivery failed:", e);
+            // Fallback to random photo in gallery on parse failure
+            const rndIdx = Math.floor(Math.random() * art.gallery.length);
+            const fallbackPic = art.gallery[rndIdx];
+            
+            this.sandboxMessages[this.selectedArtistId].push({
+              id: `gift-img-fb-${Date.now()}`,
+              senderId: this.selectedArtistId,
+              senderName: art.name,
+              text: "오늘 연습 끝나구 살짝 찍어본 사진인데 우리 [이름]이 생각나서 보내봐! 헤헤",
+              imageUrl: fallbackPic.src,
+              timestamp: new Date().toISOString(),
+              type: 'broadcast'
+            });
+            this.showToast("갤러리 보관함에서 일상 사진 1장이 즉석으로 전송되었습니다!", 'success');
           } finally {
             this.isGeneratingPhoto = false;
             this.isAiTyping = false;
@@ -1495,14 +1642,15 @@
           }
         },
 
-        // Artist Role simulation triggers
+        // Artist Console broadcaster
         triggerArtistBroadcast(text, isVoice = false) {
           this.playSound('send');
+          const art = this.activeArtist();
 
-          const mockCast = {
-            id: `artist-${Date.now()}`,
+          const castObj = {
+            id: `artist-broad-${Date.now()}`,
             senderId: this.selectedArtistId,
-            senderName: this.activeArtist().name,
+            senderName: art.name,
             text: text,
             timestamp: new Date().toISOString(),
             type: 'broadcast',
@@ -1511,68 +1659,65 @@
           };
 
           if (this.appMode === 'sandbox') {
-            this.sandboxMessages[this.selectedArtistId].push(mockCast);
-            
-            const art = this.artists.find(a => a.id === this.selectedArtistId);
-            if (art) art.lastMsg = text;
+            this.sandboxMessages[this.selectedArtistId].push(castObj);
+            art.lastMsg = text;
             this.scrollChatToBottom();
+            localStorage.setItem('bubble_chat_histories_v4', JSON.stringify(this.sandboxMessages));
 
-            // Simulate incoming comments from multiple fans
+            // Populate mock feedback replies
             setTimeout(() => {
-              const loops = Math.floor(Math.random() * 3) + 2;
-              const feedbackList = [
-                "진짜 대박... 너무 좋아 ㅠㅠ",
-                "오늘도 힘내세요!! 밥 꼭 챙겨 먹기!",
-                "목소리 너무 감미로워요 사랑해요!!",
-                "이 톡 보려고 오늘 하루 참았다 정말루",
-                "언제나 응원하고 있어요 ㅎㅎ",
-                "감기 걸리지 마요!"
+              const amount = Math.floor(Math.random() * 3) + 2;
+              const phrases = [
+                "심장 멎는 줄 알았어 진짜 ㅠㅠ",
+                "오늘 하루 피곤함이 완전 녹는다 고마워",
+                "기다린 보람이 있네 대박 ㅋㅋㅋ",
+                "아프지 말고 밥 꼭 먹어 알았지??",
+                "언제나 응원할게 화이팅!"
               ];
 
-              for (let i = 0; i < loops; i++) {
-                const randomUser = `러브팬-${Math.floor(Math.random()*900)+100}`;
-                const textSeed = feedbackList[Math.floor(Math.random()*feedbackList.length)];
+              for (let i = 0; i < amount; i++) {
+                const rndUser = `마이팬-${Math.floor(Math.random()*900)+100}`;
+                const seedText = phrases[Math.floor(Math.random()*phrases.length)];
                 this.artistConsoleReplies.unshift({
-                  id: `reply-${Date.now()}-${i}`,
-                  fanName: randomUser,
-                  text: textSeed,
+                  id: `rep-${Date.now()}-${i}`,
+                  fanName: rndUser,
+                  text: seedText,
                   timestamp: new Date().toISOString()
                 });
               }
               this.artistConsoleReplies = this.artistConsoleReplies.slice(0, 15);
             }, 1200);
-
           } else {
-            this.saveMessageToFirebase(mockCast);
+            this.saveMessageToFirebase(castObj);
           }
         },
 
-        // Custom Web Speech Voice Note Synthesis
+        // TTS Speech voice trigger
         playVoiceNote(msgId, text) {
           this.playSound('receive');
           if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
-            const rawText = this.parseMessage(text, this.userName).replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣?.!~❤️💙🐯🎸]/g, '');
-            const utterance = new SpeechSynthesisUtterance(rawText);
-            utterance.lang = 'ko-KR';
-            utterance.rate = 0.95;
-            utterance.pitch = this.selectedArtistId === 'wonbin' ? 0.8 : 1.1;
-            window.speechSynthesis.speak(utterance);
-            this.showToast(`${this.activeArtist().name}의 보이스가 흘러나옵니다... 🎙️`, 'info');
+            const textClean = this.parseMessage(text, this.userName).replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣?.!~❤️💙🐯🎸]/g, '');
+            const speakObj = new SpeechSynthesisUtterance(textClean);
+            speakObj.lang = 'ko-KR';
+            speakObj.rate = 0.95;
+            speakObj.pitch = this.selectedArtistId === 'wonbin' ? 0.8 : 1.1;
+            window.speechSynthesis.speak(speakObj);
+            this.showToast(`${this.activeArtist().name}의 보이스 메모가 흘러나옵니다... 🎙️`, 'info');
           } else {
-            this.showToast("음성 합성이 지원되지 않는 브라우저입니다.", 'warning');
+            this.showToast('이 환경은 TTS 보이스를 지원하지 않습니다.', 'warning');
           }
         },
 
-        // Floating heart emitter logic
+        // Hearts emitter on voice room
         emitLiveHeart() {
           this.playSound('heart');
           const id = Date.now();
-          const left = Math.floor(Math.random() * 60) + 20; // 20% to 80%
+          const left = Math.floor(Math.random() * 60) + 20;
           this.liveHearts.push({ id, left });
           setTimeout(() => {
             this.liveHearts = this.liveHearts.filter(h => h.id !== id);
-          }, 1200);
+          }, 1400);
         },
 
         handleLiveCommentSubmit() {
@@ -1584,89 +1729,85 @@
           this.liveChatInput = '';
         },
 
-        // Real-time Mode toggle linking (Adhering to Firestore Rules 1, 2, 3)
+        // Real-time Multi-User Network Sync Activation (Adhering to Firestore Rules)
         async setAppMode(mode) {
           this.appMode = mode;
           if (mode === 'live') {
-            this.dbStatus = '인증 및 연동 중...';
+            this.dbStatus = '인증 보안 연결 중...';
             try {
-              const appId = typeof __app_id !== 'undefined' ? __app_id : 'bubble-artifact-id';
+              const appId = typeof __app_id !== 'undefined' ? __app_id : 'bubble-artifact-sync';
               const firebaseConfigRaw = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
               const customToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
               if (!firebaseConfigRaw) {
-                this.showToast("유효한 실시간 설정 토큰이 없어 가상 시뮬레이터로 유지합니다.");
+                this.showToast('네트워크 연동 설정 매개변수가 발견되지 않아 가상 시뮬로 환원합니다.');
                 this.appMode = 'sandbox';
                 this.dbStatus = '가상 샌드박스 (로컬)';
                 return;
               }
 
-              // Import Firebase modules
               const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
               const { getAuth, signInAnonymously, signInWithCustomToken } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
               const { getFirestore, collection, onSnapshot } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
 
-              const config = JSON.parse(firebaseConfigRaw);
-              const app = initializeApp(config);
-              const db = getFirestore(app);
-              const auth = getAuth(app);
+              const configuration = JSON.parse(firebaseConfigRaw);
+              const appInstance = initializeApp(configuration);
+              const firestoreDb = getFirestore(appInstance);
+              const authInstance = getAuth(appInstance);
 
-              // RULE 3: Auth Before Queries
               let credential;
               if (customToken) {
-                credential = await signInWithCustomToken(auth, customToken);
+                credential = await signInWithCustomToken(authInstance, customToken);
               } else {
-                credential = await signInAnonymously(auth);
+                credential = await signInAnonymously(authInstance);
               }
 
-              const uid = credential.user.uid;
-              this.dbInstance = db;
-              this.authInstance = auth;
-              this.dbStatus = `연결됨 (UID: ${uid.substring(0, 6)})`;
-              this.showToast("실시간 협업 버블 채널이 활성화되었습니다!", "success");
+              const userId = credential.user.uid;
+              this.dbInstance = firestoreDb;
+              this.authInstance = authInstance;
+              this.dbStatus = `연결 완료 (UID: ${userId.substring(0, 6)})`;
+              this.showToast('버블 실시간 공유 서버망에 보안 접속되었습니다!', 'success');
 
-              // RULE 1 & 2: Strict Paths & No Complex Queries
-              const messagesCol = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
-              
-              onSnapshot(messagesCol, (snapshot) => {
-                const list = [];
-                snapshot.forEach((doc) => {
-                  list.push({ id: doc.id, ...doc.data() });
+              const messagesCollection = collection(firestoreDb, 'artifacts', appId, 'public', 'data', 'messages');
+
+              onSnapshot(messagesCollection, (snap) => {
+                const messageList = [];
+                snap.forEach((doc) => {
+                  messageList.push({ id: doc.id, ...doc.data() });
                 });
-                // Sort inside memory (Rule 2)
-                list.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-                this.liveMessages = list;
+                messageList.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                this.liveMessages = messageList;
                 this.scrollChatToBottom();
               }, (err) => {
-                console.error("Firestore Listen Error:", err);
+                console.error("Firestore live streaming break:", err);
               });
 
-            } catch (err) {
-              console.error("Firebase load err:", err);
-              this.dbStatus = '연동 실패 (가상 샌드박스 유지)';
+            } catch(e) {
+              console.error("Firebase multi-sync initializing error:", e);
               this.appMode = 'sandbox';
-              this.showToast("실시간 망을 연결할 수 없어 가상 버블로 복귀합니다.", "warning");
+              this.dbStatus = '가상 샌드박스 (로컬)';
+              this.showToast('연동에 장애가 발견되어 로컬 가상 시뮬로 환원합니다.', 'warning');
             }
           } else {
             this.dbStatus = '가상 샌드박스 (로컬)';
-            this.showToast("로컬 가상 AI 모드로 전환되었습니다.");
+            this.showToast('로컬 가상 AI 모드로 원복되었습니다.');
           }
         },
 
         async saveMessageToFirebase(msgObj) {
           if (!this.dbInstance || !this.authInstance?.currentUser) return;
           try {
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'bubble-artifact-id';
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'bubble-artifact-sync';
             const { collection, addDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
             
-            const messagesCol = collection(this.dbInstance, 'artifacts', appId, 'public', 'data', 'messages');
-            await addDoc(messagesCol, {
+            const messagesCollection = collection(this.dbInstance, 'artifacts', appId, 'public', 'data', 'messages');
+            await addDoc(messagesCollection, {
               ...msgObj,
               artistId: this.selectedArtistId,
               timestamp: new Date().toISOString()
             });
           } catch(e) {
-            console.error("Firestore write err:", e);
+            console.error("Firestore push failed:", e);
           }
         }
 
