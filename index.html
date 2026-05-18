@@ -1,1450 +1,1496 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  MessageCircle, Heart, User, Users, Settings, Phone, Volume2, 
-  Send, Image as ImageIcon, Mic, Globe, RefreshCw, Calendar, Sparkles, 
-  ArrowLeft, Palette, Info, Lock, CheckCircle2, Award, Camera, AlertCircle, X, ExternalLink
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>최애의 버블 (bubble) - Premium Sim</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Alpine.js CDN for elegant state management -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Google Fonts Noto Sans KR -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+    /* Custom Scrollbar for chat */
+    .chat-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .chat-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .chat-scroll::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 99px;
+    }
+    /* Toast slide animation */
+    @keyframes slideUp {
+      from { transform: translateY(100%) scale(0.9); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    .animate-slide-up {
+      animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    /* Heart bounce animation */
+    @keyframes floatHeart {
+      0% { transform: translateY(0) scale(0.8); opacity: 0; }
+      15% { opacity: 1; }
+      100% { transform: translateY(-120px) scale(1.2); opacity: 0; }
+    }
+    .heart-float {
+      animation: floatHeart 1.2s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-800 overflow-hidden select-none">
 
-// Default Mock Data for Artists
-const DEFAULT_ARTISTS = [
-  {
-    id: 'karina',
-    name: '카리나',
-    group: 'aespa',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    banner: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    statusMessage: '오늘 하루도 파이팅 💙',
-    themeColor: '#4f46e5',
-    dDay: 124,
-    voiceIntro: '안녕! 오늘도 와줘서 고마워 ㅎㅎ 맛있는 거 챙겨 먹구 알았지?'
-  },
-  {
-    id: 'wonbin',
-    name: '원빈',
-    group: 'RIIZE',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    banner: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
-    statusMessage: '연습 중 🎸🥁',
-    themeColor: '#ea580c',
-    dDay: 48,
-    voiceIntro: '뭐해? 보고 싶어서 버블 켰어. 오늘 노래 추천 하나 해줄까?'
-  },
-  {
-    id: 'chaewon',
-    name: '김채원',
-    group: 'LE SSERAFIM',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-    banner: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%)',
-    statusMessage: '단발 짱 🐯',
-    themeColor: '#db2777',
-    dDay: 312,
-    voiceIntro: '야호~ 밥 먹었어? 밥 안 먹었으면 나랑 같이 맛있는 거 먹자!'
-  }
-];
-
-// Prescripted messages for initial load / offline fallback
-const FALLBACK_ARTIST_SCRIPTS = {
-  karina: [
-    { text: "안녕 [이름]아! 오늘 뭐 하고 있었어? 😸" },
-    { text: "날씨가 많이 쌀쌀하니까 옷 따뜻하게 입고 다녀야 해 알았지? 💙" }
-  ],
-  wonbin: [
-    { text: "[이름]아, 밥 먹었어? ㅎㅎ 🎸" },
-    { text: "오늘 하늘 엄청 예쁘던데 기회 되면 꼭 봐봐!" }
-  ],
-  chaewon: [
-    { text: "짜잔-! 🐯 [이름]이 등장!" },
-    { text: "오늘 스케줄 끝나고 퇴근하는 길인데 진짜 보고 싶었어 ㅠㅠ ❤️" }
-  ]
-};
-
-const FAN_REPLIES_POOL = [
-  "진짜 대박... 너무 좋아 ㅠㅠ",
-  "오늘도 힘내세요!! 밥 꼭 챙겨 먹기!",
-  "목소리 너무 감미로워요 사랑해요!!",
-  "오빠/언니 덕분에 오늘 하루 피로가 싹 가셔요",
-  "안무 연습 화이팅! 다치지 마요!",
-  "마라탕 원픽 추천합니다 ㅋㅋㅋ 꼭 드셔보세요!",
-  "언제나 응원하고 있어요 ㅎㅎ",
-  "오늘 하늘 진짜 이쁘더라! 사진 공유해줘서 고마워"
-];
-
-// Custom chime sound generator using Web Audio API
-const playSound = (type) => {
-  try {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) return;
-    const ctx = new AudioContext();
+  <!-- Main Alpine App Container -->
+  <div x-data="bubbleApp()" class="flex h-screen w-screen bg-slate-950 text-slate-800 overflow-hidden">
     
-    if (type === 'receive') {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-      osc.frequency.exponentialRampToValueAtTime(783.99, ctx.currentTime + 0.15); // G5
-      gain.gain.setValueAtTime(0.12, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.25);
-    } else if (type === 'send') {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(300, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.1);
-      gain.gain.setValueAtTime(0.08, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.12);
-    } else if (type === 'heart') {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(880, ctx.currentTime); 
-      osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.08);
-      gain.gain.setValueAtTime(0.1, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.15);
-    }
-  } catch (e) {
-    console.debug("Audio play blocked:", e);
-  }
-};
+    <!-- Toast Notification Portal -->
+    <div class="fixed top-4 right-4 z-50 space-y-2 pointer-events-none max-w-sm w-full">
+      <template x-for="toast in toasts" :key="toast.id">
+        <div 
+          class="p-3.5 rounded-2xl shadow-xl flex items-center gap-2.5 text-xs font-semibold border text-white pointer-events-auto animate-slide-up"
+          :class="{
+            'bg-emerald-500/95 border-emerald-400': toast.type === 'success',
+            'bg-amber-500/95 border-amber-400': toast.type === 'warning',
+            'bg-slate-900/95 border-slate-700': toast.type === 'info'
+          }"
+        >
+          <!-- Alert Icon SVG -->
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span class="flex-1" x-text="toast.message"></span>
+          <button @click="toasts = toasts.filter(t => t.id !== toast.id)" class="p-0.5 hover:bg-white/10 rounded-full transition-all">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+      </template>
+    </div>
 
-// Exponential backoff fetcher for robust API requests
-async function fetchWithBackoff(url, options, retries = 3, delay = 1000) {
-  try {
-    const response = await fetch(url, options);
-    if (!response.ok) {
-      if (response.status === 429 && retries > 0) {
-        await new Promise(resolve => setTimeout(resolve, delay));
-        return fetchWithBackoff(url, options, retries - 1, delay * 2);
-      }
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response;
-  } catch (error) {
-    if (retries > 0) {
-      await new Promise(resolve => setTimeout(resolve, delay));
-      return fetchWithBackoff(url, options, retries - 1, delay * 2);
-    }
-    throw error;
-  }
-}
+    <!-- SIDEBAR: Control Panel (Visible on Desktop) -->
+    <div class="hidden lg:flex flex-col w-96 bg-slate-900 border-r border-slate-800 p-6 justify-between text-slate-100 overflow-y-auto shrink-0">
+      <div class="space-y-6">
+        <div class="flex items-center space-x-3">
+          <div class="bg-gradient-to-tr from-pink-500 to-indigo-500 p-2.5 rounded-2xl shadow-lg shadow-indigo-500/30">
+            <!-- Sparkles Icon -->
+            <svg class="h-6 w-6 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+          </div>
+          <div>
+            <h1 class="font-black text-xl tracking-tight bg-gradient-to-r from-pink-400 to-indigo-400 bg-clip-text text-transparent">최애의 버블 Web</h1>
+            <p class="text-xs text-slate-400 font-medium">Gemini & Imagen 완벽 시뮬레이터</p>
+          </div>
+        </div>
 
-// System Instructions to shape realistic artist personas
-const ARTIST_PERSONAS = {
-  karina: "당신은 aespa의 카리나입니다. 버블(Bubble) 1대1 채팅방에서 팬들과 대화하고 있습니다. 팬을 대할 때 매우 사근사근하고, 다정하며 배려심 넘치고 애교 있는 반말 어조를 사용해야 합니다. 고양이 이모티콘(😸, 🐱)과 파란색 하트(💙)를 아주 즐겨 씁니다. 팬의 이름은 '[이름]'으로 치환되거나 유저가 입력한 닉네임으로 불립니다. 대화는 친밀하고 사적인 일상을 공유하는 톤으로, 문장이 길어지지 않게(2~4문장) 정겨운 연예인의 일상 대화로 응답하세요. 기계적인 AI 느낌은 완전히 배제하세요.",
-  wonbin: "당신은 RIIZE의 원빈입니다. 버블(Bubble) 1대1 채팅방에서 팬들과 소통하고 있습니다. 시크해 보이지만 알고 보면 은근히 다정하고 부끄럼 타며 팬을 아끼는 반말 말투를 사용합니다. 기타(🎸) 이모티콘과 스마일, 물결무늬(~)를 자주 사용합니다. 음악, 노래 추천, 악기 연습 이야기나 소박한 일상(오늘 먹은 것, 산책 등)을 다정하게 나누는 톤입니다. 말수가 지나치게 많지 않고 담백하면서도 다정함을 담아 2~3문장 이내로 짧고 예쁘게 응답해 주세요.",
-  chaewon: "당신은 LE SSERAFIM의 김채원입니다. 버블(Bubble) 1대1 채팅방에서 팬들과 대화하고 있습니다. 아주 활발하고, 씩씩하며 애교 넘치고 텐션이 높은 귀여운 반말 어조를 사용합니다. 호랑이 이모티콘(🐯)과 빨간 하트(❤️)를 즐겨 씁니다. 유저를 놀리거나 아주 반가워하는 씩씩하고 밝은 리액션을 탑재하여 이야기해야 합니다. 장난스러운 리액션과 비타민 같은 긍정 에너지를 가득 담아 활기찬 2~4문장으로 톡톡 튀는 답장을 만들어 주세요."
-};
+        <!-- AI Engine Spec Banner -->
+        <div class="bg-indigo-950/40 border border-indigo-800/60 p-3.5 rounded-2xl space-y-1.5">
+          <div class="flex items-center justify-between text-[11px]">
+            <span class="bg-indigo-500 text-white px-2 py-0.5 rounded-full font-black tracking-wider text-[9px]">GEMINI ACTIVE</span>
+            <span class="text-indigo-300 font-semibold" x-text="appMode === 'sandbox' ? 'AI 가상 시뮬레이터' : '실시간 동기화'"></span>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            **AI 최애 아티스트**와의 실시간 소통을 지원합니다. 홈화면, 가상 이용권 충전소, 상태 메시지 변경, 라이브 방송, 단체 대화 목록 등 실제 버블 기능을 정밀 구현했습니다.
+          </p>
+        </div>
 
-export default function App() {
-  // App General State
-  const [appMode, setAppMode] = useState('sandbox'); // 'sandbox' (AI sim) or 'live' (Real-time collaborative)
-  const [userRole, setUserRole] = useState('fan'); // 'fan' or 'artist'
-  const [userName, setUserName] = useState('버블이'); // Fan's nickname
-  const [selectedArtistId, setSelectedArtistId] = useState('karina');
-  
-  // Custom Toasts State (replaces alerts)
-  const [toasts, setToasts] = useState([]);
-  
-  const showToast = (message, type = 'info') => {
-    const id = Date.now();
-    setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
-    }, 4000);
-  };
+        <!-- Mode Switcher -->
+        <div class="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700/50 space-y-2">
+          <h2 class="text-xs font-black text-pink-400 flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            연결 모드 설정
+          </h2>
+          <div class="grid grid-cols-2 gap-2 mt-2">
+            <button 
+              @click="setAppMode('sandbox')"
+              class="py-2 px-3 rounded-xl text-xs font-bold transition-all"
+              :class="appMode === 'sandbox' ? 'bg-pink-500 text-white shadow-md shadow-pink-500/20' : 'bg-slate-700 hover:bg-slate-600 text-slate-300'"
+            >
+              가상 시뮬 (AI)
+            </button>
+            <button 
+              @click="setAppMode('live')"
+              class="py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1"
+              :class="appMode === 'live' ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/20' : 'bg-slate-700 hover:bg-slate-600 text-slate-300'"
+            >
+              실시간 연동 (Live)
+            </button>
+          </div>
+        </div>
 
-  // Subscription Info
-  const [subDays, setSubDays] = useState(365); // Days subscribed (affects reply characters limit)
-  
-  // Customization State
-  const [chatBg, setChatBg] = useState('#ecf2ff'); // default soft blue
-  const [bubbleOpacity, setBubbleOpacity] = useState(95); 
-  const [activeTab, setActiveTab] = useState('chats'); // 'artists', 'chats', 'settings'
-  const [messageInput, setMessageInput] = useState('');
-  
-  // AI Generation States
-  const [isAiTyping, setIsAiTyping] = useState(false);
-  const [isGeneratingPhoto, setIsGeneratingPhoto] = useState(false);
+        <!-- Role Switcher -->
+        <div class="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700/50 space-y-2">
+          <h2 class="text-xs font-black text-indigo-400 flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            내 역할 선택
+          </h2>
+          <div class="grid grid-cols-2 gap-2">
+            <button 
+              @click="userRole = 'fan'; showToast('수신자(팬) 시뮬레이션 모드 전환 완료')"
+              class="py-2 px-3 rounded-xl text-xs font-bold transition-all"
+              :class="userRole === 'fan' ? 'bg-indigo-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'"
+            >
+              🙋‍♀️ 팬 모드 (수신)
+            </button>
+            <button 
+              @click="userRole = 'artist'; showToast('아티스트 방송 제어실로 입장했습니다!')"
+              class="py-2 px-3 rounded-xl text-xs font-bold transition-all"
+              :class="userRole === 'artist' ? 'bg-purple-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'"
+            >
+              👑 아티스트 모드
+            </button>
+          </div>
+        </div>
 
-  // Sandbox Messages (pre-loaded with a welcoming entry)
-  const [sandboxMessages, setSandboxMessages] = useState({
-    karina: [
-      { id: 'k1', senderId: 'karina', senderName: '카리나', text: '안녕 [이름]아! 오늘 하루도 씩씩하게 잘 보내고 있었어? 💙', timestamp: new Date(Date.now() - 3600000).toISOString(), type: 'broadcast' },
-      { id: 'k2', senderId: 'karina', senderName: '카리나', text: '[이름]이 생각나서 버블 슬쩍 켜봤어 ㅎㅎ 맛있는 저녁 같이 정하자! 😸', timestamp: new Date(Date.now() - 3500000).toISOString(), type: 'broadcast' }
-    ],
-    wonbin: [
-      { id: 'w1', senderId: 'wonbin', senderName: '원빈', text: '[이름]아 어서와, 오늘 날씨 참 좋더라 🎸', timestamp: new Date(Date.now() - 3600000).toISOString(), type: 'broadcast' },
-      { id: 'w2', senderId: 'wonbin', senderName: '원빈', text: '하루 종일 연습하느라 이제 조금 쉴 틈이 생겨서 바로 왔지 ㅎㅎ 뭐하고 있어?', timestamp: new Date(Date.now() - 3500000).toISOString(), type: 'broadcast' }
-    ],
-    chaewon: [
-      { id: 'c1', senderId: 'chaewon', senderName: '김채원', text: '[이름]이 등장! 🐯 오늘 진짜 진짜 보고 싶었어~', timestamp: new Date(Date.now() - 3600000).toISOString(), type: 'broadcast' },
-      { id: 'c2', senderId: 'chaewon', senderName: '김채원', text: '오늘 힘든 일 있었으면 다 나한테 털어놓아 봐! 내가 호랑이 기운으로 다 받아쳐 줄게! ❤️', timestamp: new Date(Date.now() - 3500000).toISOString(), type: 'broadcast' }
-    ]
-  });
+        <!-- Customizer Panel -->
+        <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/50 space-y-3.5">
+          <h2 class="text-xs font-black text-slate-300 flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
+            퍼스널라이징 설정
+          </h2>
+          
+          <div class="space-y-1">
+            <label class="text-[11px] text-slate-400 font-bold">팬 닉네임 설정</label>
+            <input 
+              type="text" 
+              x-model="userName" 
+              class="w-full bg-slate-700/60 border border-slate-600 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+            />
+          </div>
 
-  // Simulated Artist Console Replies (For Artist Role)
-  const [artistConsoleReplies, setArtistConsoleReplies] = useState([
-    { id: 'rep1', fanName: '미니민', text: '오늘 하루 엄청 수고하셨어요!! 푹 쉬기!!', timestamp: new Date().toISOString() },
-    { id: 'rep2', fanName: '민초단원', text: '헐 대박 지금 답장 보낼 수 있다니 꿈만 같아요', timestamp: new Date().toISOString() },
-    { id: 'rep3', fanName: '윈터러브', text: '감기 조심하고 아프지 마요 늘 사랑해요!', timestamp: new Date().toISOString() }
-  ]);
+          <div class="space-y-1">
+            <label class="text-[11px] text-slate-400 font-bold">기념일 일수 (D+Days)</label>
+            <input 
+              type="number" 
+              x-model.number="subDays" 
+              class="w-full bg-slate-700/60 border border-slate-600 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none"
+            />
+          </div>
 
-  // Audio / Live voice states
-  const [isPlayingAudio, setIsPlayingAudio] = useState(null); 
-  const [isLiveActive, setIsLiveActive] = useState(false);
-  const [liveHearts, setLiveHearts] = useState([]);
-  const [liveChatInput, setLiveChatInput] = useState('');
-  const [liveComments, setLiveComments] = useState([
-    { user: '마이카리나', text: '와 대박 라이브 목소리 너무 좋다 ㅠㅠ' },
-    { user: '브리즈원', text: '기타 연주 소리 흘려주세요 제발!' },
-    { user: '피어나라', text: '채원 언니 음색 꿀 뚝뚝 흘러요' }
-  ]);
+          <div class="space-y-1">
+            <label class="text-[11px] text-slate-400 font-bold">채팅방 배경색</label>
+            <div class="flex gap-1.5">
+              <template x-for="color in ['#f8fafc', '#ecf2ff', '#fff0f5', '#eefbfb', '#0f172a']">
+                <button 
+                  @click="chatBg = color"
+                  :style="'background-color: ' + color"
+                  class="w-6 h-6 rounded-full border-2 transition-all"
+                  :class="chatBg === color ? 'border-pink-500 scale-110' : 'border-transparent'"
+                ></button>
+              </template>
+            </div>
+          </div>
 
-  // Firebase / Live multi-player states
-  const [dbStatus, setDbStatus] = useState('Not connected');
-  const [liveMessages, setLiveMessages] = useState([]);
-  const [isFirebaseLoading, setIsFirebaseLoading] = useState(false);
-  const dbRef = useRef(null);
-  const authRef = useRef(null);
-  const messagesEndRef = useRef(null);
+          <div class="space-y-1">
+            <div class="flex justify-between text-[11px] text-slate-400 font-bold">
+              <span>버블 투명도</span>
+              <span x-text="bubbleOpacity + '%'"></span>
+            </div>
+            <input 
+              type="range" 
+              min="30" 
+              max="100" 
+              x-model="bubbleOpacity"
+              class="w-full accent-pink-500" 
+            />
+          </div>
+        </div>
+      </div>
 
-  const activeArtist = DEFAULT_ARTISTS.find(a => a.id === selectedArtistId) || DEFAULT_ARTISTS[0];
+      <div class="space-y-2 mt-4 pt-4 border-t border-slate-800">
+        <div class="flex items-center justify-between text-xs text-slate-400">
+          <span>데이터베이스 상태:</span>
+          <span class="font-extrabold" :class="dbStatus.includes('연결됨') ? 'text-green-400' : 'text-amber-400'" x-text="dbStatus"></span>
+        </div>
+        <p class="text-[10px] text-slate-500 leading-relaxed">
+          * 아티스트 채팅 목록에서 최애 아티스트 카드를 터치해 메시지방으로 입장하세요. 실시간 교감이 가능합니다.
+        </p>
+      </div>
+    </div>
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [sandboxMessages, selectedArtistId, liveMessages, activeTab, isAiTyping]);
-
-  // Core AI handler using gemini-3-flash-preview
-  const fetchGeminiArtistResponse = async (artistId, userMsg) => {
-    setIsAiTyping(true);
-    const systemPrompt = ARTIST_PERSONAS[artistId] || ARTIST_PERSONAS.karina;
-    const apiKey = ""; // Canvas auto-injects API Key
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-
-    // Compile recent conversation context for the model (Up to last 6 messages)
-    const currentHist = sandboxMessages[artistId] || [];
-    const formattedHistory = currentHist.slice(-6).map(m => ({
-      role: m.senderId === 'fan' ? 'user' : 'model',
-      parts: [{ text: m.text }]
-    }));
-
-    // Insert current user instruction
-    formattedHistory.push({
-      role: 'user',
-      parts: [{ text: userMsg }]
-    });
-
-    try {
-      const payload = {
-        contents: formattedHistory,
-        systemInstruction: {
-          parts: [{ text: systemPrompt }]
-        },
-        generationConfig: {
-          temperature: 0.8,
-          maxOutputTokens: 150
-        }
-      };
-
-      const response = await fetchWithBackoff(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      const result = await response.json();
-      const candidateText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (candidateText) {
-        playSound('receive');
+    <!-- MAIN APP SCREEN WRAPPER -->
+    <div class="flex-1 flex justify-center items-center p-0 sm:p-4 bg-gradient-to-br from-slate-950 to-slate-900">
+      <div class="relative w-full h-full sm:max-w-[420px] sm:h-[840px] bg-white sm:rounded-[36px] shadow-2xl overflow-hidden flex flex-col border border-slate-800/40">
         
-        // Randomly decide if the message includes a voice clip toggle (1 in 4 chance)
-        const isVoice = Math.random() > 0.75;
+        <!-- SPLASH SCREEN LAYER -->
+        <div 
+          x-show="isSplashScreen" 
+          x-transition:leave="transition ease-in duration-500" 
+          x-transition:leave-start="opacity-100" 
+          x-transition:leave-end="opacity-0"
+          class="absolute inset-0 z-50 bg-gradient-to-tr from-pink-500 via-purple-500 to-indigo-600 flex flex-col justify-center items-center text-white"
+        >
+          <div class="bg-white/10 p-5 rounded-3xl backdrop-blur-md mb-4 shadow-xl border border-white/20 animate-pulse">
+            <!-- Heart Icon -->
+            <svg class="w-16 h-16 text-white fill-current" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          </div>
+          <h1 class="text-3xl font-black tracking-widest italic">bubble</h1>
+          <p class="text-xs font-semibold tracking-wider text-pink-100/80 mt-2">Private Message with Artists</p>
+          <div class="absolute bottom-12 flex flex-col items-center gap-1.5">
+            <div class="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            <span class="text-[10px] text-white/60 tracking-widest">LOADING</span>
+          </div>
+        </div>
 
-        setSandboxMessages(prev => ({
-          ...prev,
-          [artistId]: [
-            ...(prev[artistId] || []),
-            {
-              id: `gemini-artist-${Date.now()}`,
-              senderId: artistId,
-              senderName: activeArtist.name,
-              text: candidateText.trim(),
-              timestamp: new Date().toISOString(),
-              type: 'broadcast',
-              isVoice: isVoice,
-              voiceDuration: isVoice ? '0:05' : null
-            }
-          ]
-        }));
-      } else {
-        throw new Error("Invalid response format");
-      }
-    } catch (error) {
-      console.error("Gemini API Error:", error);
-      // Fallback offline message simulation if network fails or limit exceeded
-      setTimeout(() => {
-        playSound('receive');
-        const fallbackPool = FALLBACK_ARTIST_SCRIPTS[artistId] || FALLBACK_ARTIST_SCRIPTS.karina;
-        const randomMsg = fallbackPool[Math.floor(Math.random() * fallbackPool.length)];
-        setSandboxMessages(prev => ({
-          ...prev,
-          [artistId]: [
-            ...(prev[artistId] || []),
-            {
-              id: `fallback-${Date.now()}`,
-              senderId: artistId,
-              senderName: activeArtist.name,
-              text: randomMsg.text,
-              timestamp: new Date().toISOString(),
-              type: 'broadcast'
-            }
-          ]
-        }));
-      }, 1500);
-    } finally {
-      setIsAiTyping(false);
-    }
-  };
+        <!-- Simulated iOS status bar -->
+        <div class="bg-white px-6 py-2 flex justify-between items-center text-xs text-slate-800 font-semibold select-none border-b border-slate-100">
+          <span>9:41</span>
+          <div class="flex items-center gap-1.5 text-[11px]">
+            <span 
+              class="text-[9px] font-black px-1.5 py-0.5 rounded"
+              :class="appMode === 'live' ? 'bg-indigo-100 text-indigo-700' : 'bg-pink-100 text-pink-600'"
+              x-text="appMode === 'live' ? 'LIVE SYNC' : 'GEMINI AI'"
+            ></span>
+            <span>📶</span>
+            <span>🔋</span>
+          </div>
+        </div>
 
-  // Photo requesting with structured gemini schema & imagen-4.0-generate-001
-  const requestArtistPhotoGift = async () => {
-    if (isGeneratingPhoto) return;
-    setIsGeneratingPhoto(true);
-    setIsAiTyping(true);
-    showToast(`${activeArtist.name} 님이 전송할 사진 선물을 고르고 있습니다... 📸`, 'info');
+        <!-- Quick Mobile role toggle (Mobile Size Only) -->
+        <div class="lg:hidden flex bg-slate-900 text-white p-2.5 justify-around text-[11px] font-bold border-b border-slate-800">
+          <button 
+            @click="userRole = (userRole === 'fan' ? 'artist' : 'fan'); showToast('역할이 변경되었습니다!')"
+            class="bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg flex items-center gap-1 transition-all"
+          >
+            역할: <span x-text="userRole === 'fan' ? '🙋‍♀️ 팬' : '👑 아티스트'"></span>
+          </button>
+          <button 
+            @click="setAppMode(appMode === 'sandbox' ? 'live' : 'sandbox')"
+            class="bg-pink-600 hover:bg-pink-700 px-3 py-1 rounded-lg transition-all"
+          >
+            모드: <span x-text="appMode === 'sandbox' ? '가상 (AI)' : '실시간(Live)'"></span>
+          </button>
+        </div>
 
-    const apiKey = "";
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+        <!-- PROFILE EDIT OVERLAY MODAL -->
+        <div x-show="isEditingProfile" class="absolute inset-0 bg-black/60 z-40 flex items-center justify-center p-6" x-transition>
+          <div class="bg-white rounded-3xl w-full p-5 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b pb-2">
+              <h3 class="font-extrabold text-sm text-slate-800">내 프로필 수정</h3>
+              <button @click="isEditingProfile = false" class="text-slate-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+            </div>
+            <div class="flex flex-col items-center gap-2">
+              <img :src="userAvatar" class="w-16 h-16 rounded-full object-cover border-2 border-indigo-500 shadow-md" />
+              <button 
+                @click="let url = prompt('임시 프로필 이미지 주소를 입력하세요:', userAvatar); if(url) userAvatar = url"
+                class="text-[10px] text-indigo-600 font-bold hover:underline"
+              >
+                사진 변경하기
+              </button>
+            </div>
+            <div class="space-y-3">
+              <div>
+                <label class="text-[10px] text-slate-400 font-bold block mb-1">닉네임</label>
+                <input type="text" x-model="tempName" class="w-full bg-slate-50 border rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none" />
+              </div>
+              <div>
+                <label class="text-[10px] text-slate-400 font-bold block mb-1">상태 메시지</label>
+                <input type="text" x-model="tempStatus" class="w-full bg-slate-50 border rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none" />
+              </div>
+            </div>
+            <button 
+              @click="userName = tempName; userStatus = tempStatus; isEditingProfile = false; showToast('프로필 변경이 완료되었습니다!', 'success')"
+              class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-bold text-xs shadow-md transition-all"
+            >
+              변경사항 저장
+            </button>
+          </div>
+        </div>
 
-    const promptForGemini = `당신은 ${activeArtist.name}(${activeArtist.group} 소속)의 버블 아이돌 대화 중입니다. 
-    오늘 팬을 위해 전송할 따뜻하고 세련된 일상 사진을 구상하고 있습니다. 
-    다음 2가지 속성을 담아 반드시 완벽한 JSON 오브젝트로만 반환하세요:
-    1. "caption": 사진을 건네며 팬에게 보낼 아주 귀엽고 다정한 한국어 한마디 (예: "오늘 커피 마시다가 하늘이 이뻐서 찍었어 💙")
-    2. "imagePrompt": 이 사진을 고화질 극사실주의 일상 인화지 사진 느낌으로 생성하기 위한 상세한 영어 Imagen 프롬프트 (예: "A high-quality aesthetic cozy photo of a delicious iced latte with cute cat-shaped foam on a marble coffee table in a modern minimal cafe, soft natural sunshine, polaroid style, 4k resolution")
+        <!-- MAIN SPA CONTENT SECTION -->
+        <div class="flex-1 flex flex-col overflow-hidden relative" :style="'background-color: ' + (inChatRoom ? chatBg : '#fafaff')">
+          
+          <!-- 1. BUBBLE VOICE LIVE SCREEN (Overlay) -->
+          <div x-show="isLiveActive" class="absolute inset-0 bg-slate-950/95 z-50 flex flex-col text-white" x-transition>
+            <!-- Live Header -->
+            <div class="p-4 flex justify-between items-center border-b border-slate-800">
+              <div class="flex items-center gap-2">
+                <span class="bg-rose-600 text-white font-black px-2 py-0.5 rounded-md text-[10px] animate-pulse">LIVE</span>
+                <span class="text-sm font-bold" x-text="activeArtist().name + ' 보이스 라이브'"></span>
+              </div>
+              <button @click="isLiveActive = false" class="p-1.5 hover:bg-slate-800 rounded-full transition-all">
+                <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+              </button>
+            </div>
 
-    JSON Schema 규격에 맞게 JSON 형태로만 출력하세요. 마크다운 기호 없이 순수 텍스트 JSON이어야 합니다.`;
+            <!-- Live Stage Center -->
+            <div class="flex-1 flex flex-col justify-center items-center p-6 text-center space-y-6 relative overflow-hidden">
+              <div class="relative w-full h-48 flex justify-center items-center">
+                <div class="relative">
+                  <img :src="activeArtist().avatar" class="w-24 h-24 rounded-full border-4 border-pink-500 shadow-xl shadow-pink-500/20 object-cover animate-pulse" />
+                  <div class="absolute -bottom-1 -right-1 bg-pink-500 p-1.5 rounded-full">
+                    <svg class="w-4 h-4 text-white animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                  </div>
+                </div>
 
-    try {
-      // 1. Get structured photo idea & caption from Gemini 3 Flash
-      const geminiPayload = {
-        contents: [{ parts: [{ text: promptForGemini }] }],
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "OBJECT",
-            properties: {
-              caption: { type: "STRING" },
-              imagePrompt: { type: "STRING" }
-            },
-            required: ["caption", "imagePrompt"]
+                <!-- Live Floating hearts container -->
+                <template x-for="heart in liveHearts" :key="heart.id">
+                  <span class="absolute bottom-16 heart-float text-3xl text-pink-500 pointer-events-none" :style="'left: ' + heart.left + '%'">❤️</span>
+                </template>
+              </div>
+
+              <div>
+                <h3 class="font-bold text-lg" x-text="activeArtist().name + ' 님이 소통 중'"></h3>
+                <p class="text-xs text-slate-400 mt-1">"따뜻한 보이스와 실시간 댓글로 소통해보세요"</p>
+              </div>
+
+              <!-- Animated Wave Visualizer -->
+              <div class="flex items-center gap-1.5 h-10">
+                <!-- FIXED: Resolved missing iteration array in x-for statement -->
+                <template x-for="h in [24, 32, 16, 40, 24, 36, 12, 32, 20]" :key="Math.random()">
+                  <div class="bg-gradient-to-t from-pink-500 to-indigo-500 w-1.5 rounded-full animate-bounce" :style="'height: ' + h + 'px; animation-duration: ' + (h*20) + 'ms'"></div>
+                </template>
+              </div>
+            </div>
+
+            <!-- Live Chat Section -->
+            <div class="h-44 bg-slate-900/60 flex flex-col border-t border-slate-800/80">
+              <div class="flex-1 overflow-y-auto p-3 space-y-2 text-xs">
+                <template x-for="com in liveComments">
+                  <div class="flex gap-1.5 items-start">
+                    <span class="text-pink-400 font-bold shrink-0" x-text="com.user + ':'"></span>
+                    <span class="text-slate-200" x-text="com.text"></span>
+                  </div>
+                </template>
+              </div>
+
+              <form @submit.prevent="handleLiveCommentSubmit" class="p-2 border-t border-slate-800 flex gap-2">
+                <input 
+                  type="text" 
+                  x-model="liveChatInput"
+                  placeholder="댓글을 달아주세요..." 
+                  class="flex-1 bg-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none placeholder-slate-500"
+                />
+                <button 
+                  type="button" 
+                  @click="emitLiveHeart()" 
+                  class="bg-pink-500 hover:bg-pink-600 p-2 rounded-xl transition-all shrink-0"
+                >
+                  ❤️
+                </button>
+                <button 
+                  type="submit" 
+                  class="bg-indigo-600 hover:bg-indigo-700 px-3 rounded-xl font-bold text-xs text-white shrink-0"
+                >
+                  전송
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <!-- 2. IN-CHAT ROOM PRIVATE SCREEN -->
+          <div x-show="inChatRoom" class="flex-1 flex flex-col h-full overflow-hidden" x-transition>
+            <!-- Chat Header -->
+            <div class="px-4 py-3 bg-white/95 border-b border-slate-100 flex justify-between items-center backdrop-blur-sm z-10">
+              <div class="flex items-center gap-2.5">
+                <button @click="inChatRoom = false" class="p-1 hover:bg-slate-100 rounded-full text-slate-500 transition-all mr-1">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                </button>
+                <img :src="activeArtist().avatar" class="w-9 h-9 rounded-full object-cover border border-slate-200" />
+                <div>
+                  <div class="flex items-center gap-1">
+                    <span class="font-bold text-sm text-slate-800" x-text="activeArtist().name"></span>
+                    <span class="text-[9px] bg-slate-100 text-slate-500 px-1 py-0.2 rounded font-semibold" x-text="activeArtist().group"></span>
+                  </div>
+                  <div class="flex items-center gap-1 text-[10px] text-pink-500 font-semibold">
+                    <span x-text="'D+' + subDays"></span>
+                    <span class="text-slate-300">•</span>
+                    <span>실시간 소통 중</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Top Action icons -->
+              <div class="flex items-center gap-1">
+                <!-- Photo Gift Request Button -->
+                <button 
+                  x-show="appMode === 'sandbox' && userRole === 'fan'"
+                  @click="requestArtistPhotoGift()"
+                  :disabled="isGeneratingPhoto"
+                  class="p-2 rounded-full text-indigo-600 hover:bg-slate-100 transition-all"
+                  :class="isGeneratingPhoto ? 'animate-spin opacity-50' : ''"
+                  title="사진 선물 조르기"
+                >
+                  <!-- Camera Icon -->
+                  <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </button>
+                <button @click="isLiveActive = true" class="p-1.5 hover:bg-slate-100 rounded-full text-rose-500 transition-all">
+                  <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Heartwarming Anniversary Bar -->
+            <div class="bg-pink-500/10 border-b border-pink-500/5 px-4 py-1.5 text-center text-[10px] text-pink-600 font-semibold flex items-center justify-center gap-1.5">
+              <span>💖 <span x-text="activeArtist().name"></span> 님과 함께한 지 <b x-text="subDays + '일'"></b>째 되는 날 💖</span>
+            </div>
+
+            <!-- Messages Stream Area -->
+            <div id="chatStream" class="flex-1 overflow-y-auto px-4 py-4 space-y-4 chat-scroll">
+              <template x-for="msg in getActiveMessages()" :key="msg.id">
+                <div class="flex items-end gap-1.5" :class="msg.senderId === 'fan' ? 'justify-end' : 'justify-start'">
+                  
+                  <!-- Profile Image (Artist messages) -->
+                  <img 
+                    x-show="msg.senderId !== 'fan'" 
+                    :src="activeArtist().avatar" 
+                    class="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-100 shadow-sm" 
+                  />
+
+                  <div class="flex flex-col" :class="msg.senderId === 'fan' ? 'max-w-[70%]' : 'max-w-[70%]'">
+                    <!-- Nickname label -->
+                    <span 
+                      x-show="msg.senderId !== 'fan'" 
+                      class="text-[10px] text-slate-500 mb-0.5 ml-1 font-semibold" 
+                      x-text="msg.senderName"
+                    ></span>
+
+                    <!-- Actual bubble container -->
+                    <div class="relative group">
+                      <div 
+                        :style="'background-color: ' + (msg.senderId === 'fan' ? activeArtist().themeColor : '#ffffff') + '; color: ' + (msg.senderId === 'fan' ? '#ffffff' : '#1e293b') + '; opacity: ' + (bubbleOpacity / 100)"
+                        class="rounded-2xl px-3.5 py-2 text-xs shadow-sm border whitespace-pre-line break-words"
+                        :class="msg.senderId === 'fan' ? 'rounded-tr-none border-transparent' : 'rounded-tl-none border-slate-100'"
+                      >
+                        <!-- Check voice message -->
+                        <template x-if="msg.isVoice">
+                          <button 
+                            @click="playVoiceNote(msg.id, msg.text)"
+                            class="flex items-center gap-2 font-bold text-left focus:outline-none"
+                          >
+                            <div class="p-1 bg-pink-100 rounded-full">
+                              🎙️
+                            </div>
+                            <div class="text-[11px]">
+                              <span class="block text-[10px] opacity-75 font-semibold" x-text="'보이스 메시지 ' + msg.voiceDuration"></span>
+                              <span class="text-pink-600 text-[10px] font-bold block mt-0.5">▶ 클릭 재생</span>
+                            </div>
+                          </button>
+                        </template>
+
+                        <!-- Standard parsed text -->
+                        <template x-if="!msg.isVoice">
+                          <div>
+                            <span x-text="parseMessage(msg.text, userName)"></span>
+                            
+                            <!-- Embedded Image Gift -->
+                            <template x-if="msg.imageUrl">
+                              <div class="mt-2 rounded-xl overflow-hidden shadow-inner border border-slate-100 bg-slate-50">
+                                <img :src="msg.imageUrl" class="w-full h-auto object-cover max-h-52" />
+                              </div>
+                            </template>
+                          </div>
+                        </template>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Time Stamp + Unread '1' Badge -->
+                  <div class="flex flex-col items-center justify-end h-full shrink-0">
+                    <span class="text-[9px] text-pink-500 font-bold leading-none mb-1">1</span>
+                    <span class="text-[8px] text-slate-400 select-none" x-text="formatTime(msg.timestamp)"></span>
+                  </div>
+
+                </div>
+              </template>
+
+              <!-- Typing Indicator -->
+              <div x-show="isAiTyping" class="flex justify-start items-end gap-1.5 animate-pulse">
+                <img :src="activeArtist().avatar" class="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-100" />
+                <div class="flex flex-col max-w-[70%]">
+                  <span class="text-[10px] text-slate-400 mb-0.5 ml-1 font-semibold" x-text="activeArtist().name"></span>
+                  <div class="bg-white rounded-2xl rounded-tl-none px-4 py-2 text-xs border border-slate-100 text-slate-400 flex items-center gap-2">
+                    <span x-text="activeArtist().name + ' 님이 답장 생각 중...'"></span>
+                    <span class="flex gap-1">
+                      <span class="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></span>
+                      <span class="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
+                      <span class="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Fan Reply Area -->
+            <form x-show="userRole === 'fan'" @submit.prevent="sendMessage()" class="p-3 bg-white/95 border-t border-slate-100 flex flex-col gap-1.5 z-10">
+              <div class="flex items-center gap-2">
+                <button type="button" @click="showToast('사진 전송 기능은 프리미엄 계정 전용입니다.', 'warning')" class="p-1.5 hover:bg-slate-100 rounded-full text-slate-400 transition-all shrink-0">
+                  📷
+                </button>
+
+                <input 
+                  type="text" 
+                  x-model="messageInput"
+                  :placeholder="isAiTyping ? '최애의 답장을 기다려주세요...' : getCharLimit() + '자 이하로 답장을 입력하세요'"
+                  :maxlength="getCharLimit()"
+                  :disabled="isAiTyping"
+                  class="flex-1 bg-slate-100 rounded-2xl px-4 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 placeholder-slate-400"
+                />
+
+                <button 
+                  type="submit" 
+                  :disabled="!messageInput.trim() || isAiTyping"
+                  :style="'background-color: ' + activeArtist().themeColor"
+                  class="p-2 text-white rounded-full hover:brightness-110 transition-all disabled:opacity-50 shrink-0"
+                >
+                  ▶
+                </button>
+              </div>
+              <div class="flex justify-between items-center px-1 text-[9px] text-slate-400">
+                <span>오늘의 최대 답장 가능 자수: <b class="text-slate-600" x-text="getCharLimit() + '자'"></b></span>
+                <span x-text="messageInput.length + ' / ' + getCharLimit()"></span>
+              </div>
+            </form>
+
+            <!-- Artist Broadcaster Deck (Artist Role Only) -->
+            <div x-show="userRole === 'artist'" class="p-3 bg-slate-950 border-t border-slate-800 text-white flex flex-col gap-3 z-10 animate-slide-up">
+              <div class="flex justify-between items-center border-b border-slate-800 pb-1.5">
+                <span class="text-xs font-black text-pink-400 flex items-center gap-1">✨ 아티스트 버블 메가폰</span>
+                <span class="text-[9px] text-slate-500">[이름] 태그 사용 시 팬 별명 치환</span>
+              </div>
+
+              <div class="space-y-2">
+                <div class="flex gap-1.5 overflow-x-auto pb-1 text-[10px]">
+                  <button @click="triggerArtistBroadcast('안무 연습 하다가 생각나서 왔당 ㅎㅎ 🦁')" class="bg-slate-900 hover:bg-slate-800 px-2.5 py-1 rounded-full shrink-0 border border-slate-800">💬 안무연습</button>
+                  <button @click="triggerArtistBroadcast('밥은 꼭 잘 챙겨 먹어야 해 [이름]아! 🍚')" class="bg-slate-900 hover:bg-slate-800 px-2.5 py-1 rounded-full shrink-0 border border-slate-800">🍚 밥챙겨먹기</button>
+                  <button @click="triggerArtistBroadcast('방금 눈 떴어.. 🎙️ 목소리 선물!', true)" class="bg-slate-900 hover:bg-slate-800 px-2.5 py-1 rounded-full shrink-0 border border-slate-800 text-pink-300">🎙️ 기상보이스</button>
+                </div>
+
+                <div class="flex gap-1.5">
+                  <input 
+                    type="text" 
+                    id="artMic"
+                    placeholder="팬들에게 보낼 전체 메시지를 입력하세요..." 
+                    class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none placeholder-slate-500"
+                    @keydown.enter="let v = $el.value; if(v.trim()) { triggerArtistBroadcast(v); $el.value='' }"
+                  />
+                  <button 
+                    @click="let i = document.getElementById('artMic'); if(i && i.value.trim()){ triggerArtistBroadcast(i.value); i.value='' }"
+                    class="bg-pink-500 hover:bg-pink-600 px-4 py-2 rounded-xl text-xs font-bold transition-all"
+                  >
+                    전송
+                  </button>
+                </div>
+              </div>
+
+              <!-- Live Fan Feedback Tracker -->
+              <div class="space-y-1">
+                <h4 class="text-[10px] text-slate-400 font-bold">수신 중인 실시간 피드백 대시보드</h4>
+                <div class="h-20 overflow-y-auto bg-slate-900 p-2 rounded-lg space-y-1 text-[10px] border border-slate-800/60 chat-scroll">
+                  <template x-for="rep in artistConsoleReplies" :key="rep.id">
+                    <div class="flex justify-between border-b border-slate-800/40 pb-0.5">
+                      <div>
+                        <span class="text-indigo-400 font-bold mr-1.5" x-text="rep.fanName"></span>
+                        <span class="text-slate-300" x-text="rep.text"></span>
+                      </div>
+                      <span class="text-[8px] text-slate-500" x-text="formatTime(rep.timestamp)"></span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 3. SPA TAB VIEW LAYER (Home, Chats, Settings) -->
+          <div x-show="!inChatRoom" class="flex-1 flex flex-col h-full overflow-hidden">
+            
+            <!-- HOME TAB (Friends & Custom Profiles) -->
+            <div x-show="activeTab === 'home'" class="flex-1 flex flex-col overflow-y-auto p-4 space-y-4 chat-scroll">
+              <div class="flex justify-between items-center select-none">
+                <h2 class="text-2xl font-black italic tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-600">bubble</h2>
+                <div class="flex gap-3 text-slate-600">
+                  <span class="cursor-pointer hover:text-indigo-600 text-lg">🔍</span>
+                  <span @click="showToast('구독 티켓 전송 기능은 준비 중입니다.')" class="cursor-pointer hover:text-indigo-600 text-lg">➕</span>
+                </div>
+              </div>
+
+              <!-- Interactive Profile Header Card -->
+              <div 
+                @click="tempName = userName; tempStatus = userStatus; isEditingProfile = true"
+                class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-50/50 transition-all"
+              >
+                <div class="flex items-center gap-3">
+                  <div class="relative">
+                    <img :src="userAvatar" class="w-12 h-12 rounded-full object-cover border-2 border-pink-500 shadow-sm" />
+                    <div class="absolute -bottom-1 -right-1 bg-pink-500 p-0.5 rounded-full text-[8px] text-white">⭐</div>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-1.5">
+                      <span class="font-extrabold text-sm text-slate-800" x-text="userName"></span>
+                      <span class="text-[9px] bg-pink-100 text-pink-600 px-1.5 py-0.2 rounded font-black">My</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 mt-0.5 max-w-[200px] truncate" x-text="userStatus"></p>
+                  </div>
+                </div>
+                <span class="text-slate-400">〉</span>
+              </div>
+
+              <!-- Subscription Voucher Card -->
+              <div class="bg-gradient-to-tr from-pink-500 via-purple-500 to-indigo-600 rounded-3xl p-4 text-white shadow-xl relative overflow-hidden">
+                <div class="flex justify-between items-center mb-2">
+                  <div class="flex items-center gap-1.5 text-pink-100 font-black tracking-widest text-[9px]">
+                    🎟️ MY PASS VOUCHER
+                  </div>
+                  <span class="bg-white/20 text-[9px] font-bold px-2 py-0.5 rounded-full">구독 활성</span>
+                </div>
+                <p class="text-sm font-bold" x-text="'Lysn bubble ' + purchasedTickets + '인권 이용 중'"></p>
+                <div class="flex justify-between items-center mt-3 text-[10px] text-pink-100/95 border-t border-white/20 pt-2.5">
+                  <span>자동갱신일: 매월 18일</span>
+                  <button @click="activeTab = 'settings'" class="bg-white text-indigo-700 font-extrabold px-2.5 py-1 rounded-lg">티켓 상점</button>
+                </div>
+              </div>
+
+              <!-- Recommendation Banner Slider -->
+              <div class="overflow-hidden rounded-2xl relative h-20 bg-slate-200 shadow-inner">
+                <div class="absolute inset-0 bg-gradient-to-r from-purple-950/80 to-transparent z-10 p-3.5 flex flex-col justify-center text-white">
+                  <span class="bg-rose-500 text-[8px] font-black px-1.5 py-0.2 rounded w-max mb-1">EVENT</span>
+                  <h4 class="text-xs font-black">aespa Whiplash 버블 전용 보이스 오픈!</h4>
+                  <p class="text-[10px] text-slate-200/90 mt-0.5">매일 아침 최애의 알람 사운드로 기상하기</p>
+                </div>
+                <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80" class="w-full h-full object-cover" />
+              </div>
+
+              <!-- Subscribed Artists Title -->
+              <div class="flex justify-between items-center pt-2 select-none">
+                <span class="text-[11px] font-bold text-slate-400">구독 중인 아티스트 <span x-text="'(' + artists.length + ')'"></span></span>
+              </div>
+
+              <!-- Friend/Artist Row -->
+              <div class="space-y-2.5">
+                <template x-for="art in artists" :key="art.id">
+                  <div 
+                    @click="handleSelectArtist(art.id)"
+                    class="bg-white rounded-2xl p-3 shadow-sm hover:shadow-md transition-all border border-slate-100 flex items-center justify-between cursor-pointer"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div class="relative">
+                        <img :src="art.avatar" class="w-11 h-11 rounded-full object-cover border border-slate-200" />
+                        <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span>
+                      </div>
+                      <div>
+                        <div class="flex items-center gap-1.5">
+                          <span class="font-extrabold text-sm text-slate-800" x-text="art.name"></span>
+                          <span class="text-[9px] bg-slate-100 text-slate-500 px-1 py-0.2 rounded font-semibold" x-text="art.group"></span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 truncate max-w-[180px] mt-0.5" x-text="art.statusMessage"></p>
+                      </div>
+                    </div>
+                    
+                    <div class="text-right flex flex-col items-end gap-1">
+                      <span class="text-[9px] bg-pink-100 text-pink-600 font-extrabold px-2.5 py-0.5 rounded-full" x-text="'D+' + art.dDay"></span>
+                      <template x-if="art.unreadCount > 0">
+                        <span class="bg-red-500 text-white text-[9px] font-bold w-4.5 h-4.5 rounded-full flex items-center justify-center animate-bounce" x-text="art.unreadCount"></span>
+                      </template>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <!-- CHATS LIST TAB -->
+            <div x-show="activeTab === 'chats'" class="flex-1 flex flex-col p-4 bg-slate-50/70 space-y-4 chat-scroll overflow-y-auto">
+              <div class="flex justify-between items-center select-none">
+                <h2 class="text-xl font-extrabold text-slate-800">채팅방 목록</h2>
+                <span class="text-lg cursor-pointer">🔔</span>
+              </div>
+
+              <div class="space-y-2">
+                <template x-for="art in artists" :key="art.id">
+                  <div 
+                    @click="handleSelectArtist(art.id)"
+                    class="bg-white rounded-2xl p-3.5 shadow-sm hover:shadow-md transition-all border flex items-center gap-3 cursor-pointer"
+                    :class="art.unreadCount > 0 ? 'border-indigo-200 bg-indigo-50/10' : 'border-slate-100'"
+                  >
+                    <img :src="art.avatar" class="w-12 h-12 rounded-full object-cover border border-slate-200" />
+                    
+                    <div class="flex-1 min-w-0">
+                      <div class="flex justify-between items-baseline mb-0.5">
+                        <span class="font-extrabold text-sm text-slate-800" x-text="art.name"></span>
+                        <span class="text-[8px] text-slate-400 font-semibold shrink-0">오후 9:41</span>
+                      </div>
+                      <p class="text-[11px] text-slate-500 truncate pr-4" x-text="parseMessage(art.lastMsg, userName)"></p>
+                    </div>
+
+                    <div class="flex flex-col items-end justify-center shrink-0 min-w-[20px]">
+                      <template x-if="art.unreadCount > 0">
+                        <span class="bg-rose-500 text-white font-black text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center shadow-sm" x-text="art.unreadCount"></span>
+                      </template>
+                      <template x-if="art.unreadCount === 0">
+                        <span class="text-[9px] text-pink-500 font-bold">1</span>
+                      </template>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <!-- SETTINGS & TICKET STORE TAB -->
+            <div x-show="activeTab === 'settings'" class="flex-1 flex flex-col p-4 bg-slate-50/70 space-y-4 overflow-y-auto chat-scroll">
+              <h2 class="font-extrabold text-lg text-slate-800">더보기 & 이용권 상점</h2>
+
+              <!-- Ticket Shop Card -->
+              <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 space-y-3">
+                <h3 class="text-xs font-black text-slate-800 border-b pb-2 flex items-center gap-1.5">
+                  🎟️ Lysn bubble 이용권 구매소
+                </h3>
+                <p class="text-[11px] text-slate-500 leading-relaxed">구독권 수를 더 많이 확보하여 최애 아티스트들과 다자간 대화 혜택을 챙기세요!</p>
+                
+                <div class="grid grid-cols-3 gap-2">
+                  <button @click="purchasedTickets += 1; showToast('1인권이 추가로 활성화되었습니다!', 'success')" class="bg-slate-50 hover:bg-slate-100 border rounded-2xl p-2 flex flex-col items-center gap-1">
+                    <span class="text-xs font-black">1인권</span>
+                    <span class="text-[9px] text-pink-500 font-bold">₩4,500</span>
+                  </button>
+                  <button @click="purchasedTickets += 2; showToast('2인권이 추가로 활성화되었습니다!', 'success')" class="bg-slate-50 hover:bg-slate-100 border rounded-2xl p-2 flex flex-col items-center gap-1">
+                    <span class="text-xs font-black">2인권</span>
+                    <span class="text-[9px] text-pink-500 font-bold">₩8,000</span>
+                  </button>
+                  <button @click="purchasedTickets += 3; showToast('3인권이 추가로 활성화되었습니다!', 'success')" class="bg-gradient-to-tr from-pink-100 to-indigo-100 border border-pink-200 rounded-2xl p-2 flex flex-col items-center gap-1">
+                    <span class="text-xs font-black text-indigo-800">3인권</span>
+                    <span class="text-[9px] text-indigo-600 font-bold">₩11,500</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Quick Customizer Setting list -->
+              <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 space-y-3">
+                <h3 class="text-xs font-black text-indigo-600 flex items-center gap-1">🛠️ 기념일 설정 조정</h3>
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-slate-500 font-medium">내 닉네임:</span>
+                  <button @click="tempName = userName; tempStatus = userStatus; isEditingProfile = true" class="font-bold text-indigo-600" x-text="userName"></button>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-slate-500 font-medium">버블 기념일:</span>
+                  <input type="number" x-model.number="subDays" class="w-16 text-right border bg-slate-50 rounded px-1" />
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-slate-500 font-medium">한도 글자수:</span>
+                  <span class="font-extrabold text-pink-600" x-text="getCharLimit() + '자'"></span>
+                </div>
+              </div>
+
+              <!-- AI Systems Status specifications -->
+              <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 space-y-2">
+                <h3 class="text-xs font-black text-slate-700 border-b pb-1">🤖 탑재된 로컬 지능형 엔진</h3>
+                <div class="text-[10px] text-slate-600 space-y-1">
+                  <p>• <b>글 생성</b>: Gemini 2.5 Flash Preview</p>
+                  <p>• <b>이미지 시각화</b>: Imagen 4.0 Generate</p>
+                  <p>• <b>오디오 신디사이저</b>: Web Speech TTS & Custom Synth</p>
+                </div>
+              </div>
+
+              <p class="text-center text-[10px] text-slate-400">© 2026 bubble simulator v2.5.0. All rights reserved.</p>
+            </div>
+
+          </div>
+
+          <!-- BOTTOM TAB NAVIGATION BAR -->
+          <div x-show="!inChatRoom" class="bg-white border-t border-slate-100 py-2.5 px-6 flex justify-around items-center select-none z-10 shrink-0">
+            <button 
+              @click="activeTab = 'home'" 
+              class="flex flex-col items-center gap-1 transition-all"
+              :class="activeTab === 'home' ? 'text-indigo-600 scale-105 font-bold' : 'text-slate-400'"
+            >
+              <span class="text-lg">👥</span>
+              <span class="text-[10px]">친구</span>
+            </button>
+
+            <button 
+              @click="activeTab = 'chats'" 
+              class="flex flex-col items-center gap-1 transition-all relative"
+              :class="activeTab === 'chats' ? 'text-indigo-600 scale-105 font-bold' : 'text-slate-400'"
+            >
+              <span class="text-lg">💬</span>
+              <span class="text-[10px]">채팅</span>
+              <!-- Red badge trigger -->
+              <span x-show="artists.some(a => a.unreadCount > 0)" class="absolute top-0 right-1 w-2 h-2 bg-pink-500 rounded-full animate-ping"></span>
+            </button>
+
+            <button @click="isLiveActive = true" class="flex flex-col items-center gap-1 text-rose-500 hover:scale-105 transition-all">
+              <span class="text-lg animate-pulse">🎙️</span>
+              <span class="text-[10px] font-black animate-pulse">보이스</span>
+            </button>
+
+            <button 
+              @click="activeTab = 'settings'" 
+              class="flex flex-col items-center gap-1 transition-all"
+              :class="activeTab === 'settings' ? 'text-indigo-600 scale-105 font-bold' : 'text-slate-400'"
+            >
+              <span class="text-lg">⚙️</span>
+              <span class="text-[10px]">더보기</span>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Alpine State & Method Logic Implementation -->
+  <script>
+    document.addEventListener('alpine:init', () => {
+      Alpine.data('bubbleApp', () => ({
+        // App Core State variables
+        isSplashScreen: true,
+        appMode: 'sandbox', // 'sandbox' (AI Simulation) or 'live' (Real-time Firebase)
+        userRole: 'fan', // 'fan' | 'artist'
+        userName: '버블이',
+        userStatus: '오늘도 카리나 생각 뿐.. 💙',
+        userAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+        selectedArtistId: 'karina',
+        inChatRoom: false,
+        purchasedTickets: 3,
+        subDays: 124,
+        chatBg: '#ecf2ff',
+        bubbleOpacity: 95,
+        activeTab: 'home',
+        
+        isAiTyping: false,
+        isGeneratingPhoto: false,
+        isEditingProfile: false,
+        tempName: '버블이',
+        tempStatus: '오늘도 카리나 생각 뿐.. 💙',
+        
+        // Custom Live states
+        isLiveActive: false,
+        liveChatInput: '',
+        liveHearts: [],
+        toasts: [],
+        
+        // Artists Static Data Preset
+        artists: [
+          {
+            id: 'karina',
+            name: '카리나',
+            group: 'aespa',
+            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+            statusMessage: '오늘 하루도 파이팅 💙',
+            themeColor: '#4f46e5',
+            dDay: 124,
+            unreadCount: 2,
+            lastMsg: '오늘 커피 마시다가 하늘이 이뻐서 찍었어 💙'
+          },
+          {
+            id: 'wonbin',
+            name: '원빈',
+            group: 'RIIZE',
+            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+            statusMessage: '연습 중 🎸🥁',
+            themeColor: '#ea580c',
+            dDay: 48,
+            unreadCount: 1,
+            lastMsg: '하루 종일 연습하느라 이제 조금 쉴 틈이 생겨서 바로 왔지 ㅎㅎ 뭐하고 있어?'
+          },
+          {
+            id: 'chaewon',
+            name: '김채원',
+            group: 'LE SSERAFIM',
+            avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+            statusMessage: '단발 짱 🐯',
+            themeColor: '#db2777',
+            dDay: 312,
+            unreadCount: 0,
+            lastMsg: '오늘 힘든 일 있었으면 다 나한테 털어놓아 봐! 내가 호랑이 기운으로 다 받아쳐 줄게! ❤️'
           }
-        }
-      };
+        ],
 
-      const geminiRes = await fetchWithBackoff(geminiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(geminiPayload)
-      });
-      const geminiJson = await geminiRes.json();
-      const rawText = geminiJson.candidates?.[0]?.content?.parts?.[0]?.text;
-      
-      const parsed = JSON.parse(rawText);
-      const photoCaption = parsed.caption || "예쁜 사진 보낸다아! 💙";
-      const imageGenerationPrompt = parsed.imagePrompt || "A gorgeous minimal Korean background aesthetic with soft warm lighting, cozy mood";
-
-      // 2. Feed the generated imagePrompt into imagen-4.0-generate-001
-      const imagenUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
-      const imagenPayload = {
-        instances: [{ prompt: imageGenerationPrompt }],
-        parameters: { sampleCount: 1 }
-      };
-
-      const imagenRes = await fetchWithBackoff(imagenUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(imagenPayload)
-      });
-      const imagenJson = await imagenRes.json();
-      const base64Data = imagenJson.predictions?.[0]?.bytesBase64Encoded;
-
-      if (base64Data) {
-        const imageUrl = `data:image/png;base64,${base64Data}`;
-        playSound('receive');
-        
-        // Add photo message to Sandbox
-        setSandboxMessages(prev => ({
-          ...prev,
-          [selectedArtistId]: [
-            ...(prev[selectedArtistId] || []),
-            {
-              id: `photo-gift-${Date.now()}`,
-              senderId: selectedArtistId,
-              senderName: activeArtist.name,
-              text: photoCaption,
-              imageUrl: imageUrl,
-              timestamp: new Date().toISOString(),
-              type: 'broadcast'
-            }
+        // Sandbox Messages list
+        sandboxMessages: {
+          karina: [
+            { id: 'k1', senderId: 'karina', senderName: '카리나', text: '안녕 [이름]아! 오늘 하루도 씩씩하게 잘 보내고 있었어? 💙', timestamp: new Date(Date.now() - 3600000).toISOString(), type: 'broadcast' },
+            { id: 'k2', senderId: 'karina', senderName: '카리나', text: '[이름]이 생각나서 버블 슬쩍 켜봤어 ㅎㅎ 맛있는 저녁 같이 정하자! 😸', timestamp: new Date(Date.now() - 3500000).toISOString(), type: 'broadcast', imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop&q=80' }
+          ],
+          wonbin: [
+            { id: 'w1', senderId: 'wonbin', senderName: '원빈', text: '[이름]아 어서와, 오늘 날씨 참 좋더라 🎸', timestamp: new Date(Date.now() - 3600000).toISOString(), type: 'broadcast' },
+            { id: 'w2', senderId: 'wonbin', senderName: '원빈', text: '하루 종일 연습하느라 이제 조금 쉴 틈이 생겨서 바로 왔지 ㅎㅎ 뭐하고 있어?', timestamp: new Date(Date.now() - 3500000).toISOString(), type: 'broadcast' }
+          ],
+          chaewon: [
+            { id: 'c1', senderId: 'chaewon', senderName: '김채원', text: '[이름]이 등장! 🐯 오늘 진짜 진짜 보고 싶었어~', timestamp: new Date(Date.now() - 3600000).toISOString(), type: 'broadcast' },
+            { id: 'c2', senderId: 'chaewon', senderName: '김채원', text: '오늘 힘든 일 있었으면 다 나한테 털어놓아 봐! 내가 호랑이 기운으로 다 받아쳐 줄게! ❤️', timestamp: new Date(Date.now() - 3500000).toISOString(), type: 'broadcast' }
           ]
-        }));
-        showToast("최애가 깜짝 사진 선물을 전송했습니다! 🥰", 'success');
-      } else {
-        throw new Error("Imagen generation did not yield bytes");
-      }
+        },
 
-    } catch (e) {
-      console.error("API flow for photo gift failed:", e);
-      showToast("아티스트가 사진첩을 뒤적이다가 바빠진 것 같아요. 잠시 후 다시 요청해 주세요!", 'warning');
-    } finally {
-      setIsGeneratingPhoto(false);
-      setIsAiTyping(false);
-    }
-  };
+        // Offline Fallback presets
+        fallbackPool: {
+          karina: [
+            { text: "안녕 [이름]아! 오늘 뭐 하고 있었어? 😸" },
+            { text: "날씨가 많이 쌀쌀하니까 옷 따뜻하게 입고 다녀야 해 알았지? 💙" }
+          ],
+          wonbin: [
+            { text: "[이름]아, 밥 먹었어? ㅎㅎ 🎸" },
+            { text: "오늘 하늘 엄청 예쁘던데 기회 되면 꼭 봐봐!" }
+          ],
+          chaewon: [
+            { text: "짜잔-! 🐯 [이름]이 등장!" },
+            { text: "오늘 스케줄 끝나고 퇴근하는 길인데 진짜 보고 싶었어 ㅠㅠ ❤️" }
+          ]
+        },
 
-  const handleSelectArtist = (id) => {
-    setSelectedArtistId(id);
-    setActiveTab('chats');
-  };
+        artistConsoleReplies: [
+          { id: 'rep1', fanName: '미니민', text: '오늘 하루 엄청 수고하셨어요!! 푹 쉬기!!', timestamp: new Date().toISOString() },
+          { id: 'rep2', fanName: '민초단원', text: '헐 대박 지금 답장 보낼 수 있다니 꿈만 같아요', timestamp: new Date().toISOString() },
+          { id: 'rep3', fanName: '윈터러브', text: '감기 조심하고 아프지 마요 늘 사랑해요!', timestamp: new Date().toISOString() }
+        ],
 
-  const parseMessage = (text, nameVal) => {
-    if (!text) return '';
-    return text
-      .replace(/\[이름\]/g, nameVal)
-      .replace(/\[Name\]/g, nameVal)
-      .replace(/\{\{name\}\}/g, nameVal);
-  };
+        liveComments: [
+          { user: '마이카리나', text: '와 대박 라이브 목소리 너무 좋다 ㅠㅠ' },
+          { user: '브리즈원', text: '기타 연주 소리 흘려주세요 제발!' },
+          { user: '피어나라', text: '채원 언니 음색 꿀 뚝뚝 흘러요' }
+        ],
 
-  // Sound & Speech (TTS) Playback
-  const playVoiceNote = (id, text) => {
-    if (isPlayingAudio === id) {
-      setIsPlayingAudio(null);
-      return;
-    }
-    setIsPlayingAudio(id);
-    playSound('receive');
-    
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const cleanText = parseMessage(text, userName).replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣?.!~❤️💙🐯🎸]/g, '');
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.lang = 'ko-KR';
-      utterance.rate = 0.95; 
-      utterance.pitch = selectedArtistId === 'wonbin' ? 0.85 : 1.1; 
-      utterance.onend = () => setIsPlayingAudio(null);
-      utterance.onerror = () => setIsPlayingAudio(null);
-      window.speechSynthesis.speak(utterance);
-    } else {
-      setTimeout(() => setIsPlayingAudio(null), 3000);
-    }
-  };
+        // Firebase variables
+        dbStatus: '연결되지 않음 (가상 샌드박스)',
+        liveMessages: [],
+        dbInstance: null,
+        authInstance: null,
+        messageInput: '',
 
-  const getCharLimit = () => {
-    if (subDays >= 365) return 100;
-    if (subDays >= 100) return 50;
-    return 30;
-  };
+        init() {
+          // Splash fade out
+          setTimeout(() => {
+            this.isSplashScreen = false;
+          }, 1800);
+        },
 
-  const handleSendMessage = (e) => {
-    e.preventDefault();
-    if (!messageInput.trim()) return;
+        showToast(message, type = 'info') {
+          const id = Date.now();
+          this.toasts.push({ id, message, type });
+          setTimeout(() => {
+            this.toasts = this.toasts.filter(t => t.id !== id);
+          }, 4000);
+        },
 
-    const maxChars = getCharLimit();
-    if (messageInput.length > maxChars) {
-      showToast(`구독 ${subDays}일 차의 답장 최대 글자 수는 ${maxChars}자입니다!`, 'warning');
-      return;
-    }
+        activeArtist() {
+          return this.artists.find(a => a.id === this.selectedArtistId) || this.artists[0];
+        },
 
-    playSound('send');
+        getCharLimit() {
+          if (this.subDays >= 365) return 100;
+          if (this.subDays >= 100) return 50;
+          return 30;
+        },
 
-    const newMessage = {
-      id: `fan-${Date.now()}`,
-      senderId: 'fan',
-      senderName: userName,
-      text: messageInput,
-      timestamp: new Date().toISOString(),
-      type: 'reply'
-    };
+        handleSelectArtist(id) {
+          this.selectedArtistId = id;
+          this.inChatRoom = true;
+          // Clear notification count
+          const art = this.artists.find(a => a.id === id);
+          if (art) art.unreadCount = 0;
+          
+          this.scrollChatToBottom();
+        },
 
-    if (appMode === 'sandbox') {
-      setSandboxMessages(prev => ({
-        ...prev,
-        [selectedArtistId]: [...(prev[selectedArtistId] || []), newMessage]
-      }));
-      const userContent = messageInput;
-      setMessageInput('');
-
-      // Send instruction to Gemini AI dynamically
-      setTimeout(() => {
-        fetchGeminiArtistResponse(selectedArtistId, userContent);
-      }, 1000);
-    } else {
-      saveMessageToFirebase(newMessage);
-      setMessageInput('');
-    }
-  };
-
-  // Broadcasting simulated console messages (Artist View)
-  const triggerArtistBroadcast = (text, isVoice = false) => {
-    playSound('send');
-    
-    const mockBroadcast = {
-      id: `artist-${Date.now()}`,
-      senderId: selectedArtistId,
-      senderName: activeArtist.name,
-      text: text,
-      timestamp: new Date().toISOString(),
-      type: 'broadcast',
-      isVoice: isVoice,
-      voiceDuration: isVoice ? '0:07' : null
-    };
-
-    if (appMode === 'sandbox') {
-      setSandboxMessages(prev => ({
-        ...prev,
-        [selectedArtistId]: [...(prev[selectedArtistId] || []), mockBroadcast]
-      }));
-
-      // Infiltrate interactive console responses
-      setTimeout(() => {
-        const randomFanCount = Math.floor(Math.random() * 3) + 2;
-        const newReplies = [];
-        for (let i = 0; i < randomFanCount; i++) {
-          const randFan = `덕후-${Math.floor(Math.random() * 900 + 100)}`;
-          const randText = FAN_REPLIES_POOL[Math.floor(Math.random() * FAN_REPLIES_POOL.length)];
-          newReplies.push({
-            id: `console-rep-${Date.now()}-${i}`,
-            fanName: randFan,
-            text: randText,
-            timestamp: new Date().toISOString()
+        scrollChatToBottom() {
+          this.$nextTick(() => {
+            const el = document.getElementById('chatStream');
+            if (el) el.scrollTop = el.scrollHeight;
           });
-        }
-        setArtistConsoleReplies(prev => [...newReplies, ...prev].slice(0, 15));
-      }, 1200);
-    } else {
-      saveMessageToFirebase(mockBroadcast);
-    }
-  };
+        },
 
-  const emitLiveHeart = () => {
-    playSound('heart');
-    const heartId = Date.now();
-    const positions = ['left-1/4', 'left-1/2', 'left-1/3', 'left-2/3', 'right-1/4'];
-    const randomPos = positions[Math.floor(Math.random() * positions.length)];
-    const newHeart = {
-      id: heartId,
-      style: `absolute bottom-16 ${randomPos} animate-bounce text-pink-500 text-3xl opacity-90 transition-all duration-1000 pointer-events-none`
-    };
-    setLiveHearts(prev => [...prev, newHeart]);
-    setTimeout(() => {
-      setLiveHearts(prev => prev.filter(h => h.id !== heartId));
-    }, 1200);
-  };
+        parseMessage(text, nameVal) {
+          if (!text) return '';
+          return text
+            .replace(/\[이름\]/g, nameVal)
+            .replace(/\[Name\]/g, nameVal)
+            .replace(/\{\{name\}\}/g, nameVal);
+        },
 
-  const handleLiveComment = (e) => {
-    e.preventDefault();
-    if (!liveChatInput.trim()) return;
-    setLiveComments(prev => [...prev, { user: userName, text: liveChatInput }]);
-    setLiveChatInput('');
-  };
+        formatTime(isoString) {
+          try {
+            return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          } catch(e) {
+            return '';
+          }
+        },
 
-  // Real-time Firebase Linker
-  useEffect(() => {
-    if (appMode === 'live') {
-      setIsFirebaseLoading(true);
-      const loadFirebase = async () => {
-        try {
-          const app_id = typeof __app_id !== 'undefined' ? __app_id : 'bubble-default-id';
-          const firebaseConfigRaw = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
-          const customToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        getActiveMessages() {
+          if (this.appMode === 'sandbox') {
+            return this.sandboxMessages[this.selectedArtistId] || [];
+          } else {
+            return this.liveMessages.filter(m => m.artistId === this.selectedArtistId);
+          }
+        },
 
-          if (!firebaseConfigRaw) {
-            setDbStatus("No Firebase Config Provided. Defaulting to sandbox.");
-            setAppMode('sandbox');
-            setIsFirebaseLoading(false);
+        // Web Audio Chime Sound Maker
+        playSound(type) {
+          try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            const ctx = new AudioContext();
+            
+            if (type === 'receive') {
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+              osc.frequency.exponentialRampToValueAtTime(783.99, ctx.currentTime + 0.15); // G5
+              gain.gain.setValueAtTime(0.12, ctx.currentTime);
+              gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              osc.start();
+              osc.stop(ctx.currentTime + 0.25);
+            } else if (type === 'send') {
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              osc.type = 'triangle';
+              osc.frequency.setValueAtTime(300, ctx.currentTime);
+              osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.1);
+              gain.gain.setValueAtTime(0.08, ctx.currentTime);
+              gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              osc.start();
+              osc.stop(ctx.currentTime + 0.12);
+            } else if (type === 'heart') {
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(880, ctx.currentTime); 
+              osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.08);
+              gain.gain.setValueAtTime(0.1, ctx.currentTime);
+              gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              osc.start();
+              osc.stop(ctx.currentTime + 0.15);
+            }
+          } catch (e) {
+            console.debug("Sound generation blocked/unsupported", e);
+          }
+        },
+
+        // Send fan message
+        sendMessage() {
+          if (!this.messageInput.trim()) return;
+
+          const limit = this.getCharLimit();
+          if (this.messageInput.length > limit) {
+            this.showToast(`구독 ${this.subDays}일차의 전송 제한 글자 수는 ${limit}자입니다!`, 'warning');
             return;
           }
 
-          const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
-          const { getAuth, signInAnonymously, signInWithCustomToken } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
-          const { getFirestore, collection, onSnapshot } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+          this.playSound('send');
 
-          const firebaseConfig = JSON.parse(firebaseConfigRaw);
-          const app = initializeApp(firebaseConfig);
-          const db = getFirestore(app);
-          const auth = getAuth(app);
+          const newMsg = {
+            id: `fan-${Date.now()}`,
+            senderId: 'fan',
+            senderName: this.userName,
+            text: this.messageInput,
+            timestamp: new Date().toISOString(),
+            type: 'reply'
+          };
 
-          let userCredential;
-          if (customToken) {
-            userCredential = await signInWithCustomToken(auth, customToken);
+          if (this.appMode === 'sandbox') {
+            this.sandboxMessages[this.selectedArtistId].push(newMsg);
+            const copyInput = this.messageInput;
+            this.messageInput = '';
+            this.scrollChatToBottom();
+
+            // Fire AI Generation
+            setTimeout(() => {
+              this.fetchGeminiArtistResponse(this.selectedArtistId, copyInput);
+            }, 1000);
           } else {
-            userCredential = await signInAnonymously(auth);
+            this.saveMessageToFirebase(newMsg);
+            this.messageInput = '';
           }
-          
-          const uid = userCredential.user.uid;
-          dbRef.current = db;
-          authRef.current = auth;
-          setDbStatus(`연결됨 (UID: ${uid.substring(0, 6)}...)`);
+        },
 
-          const messagesCol = collection(db, 'artifacts', app_id, 'public', 'data', 'messages');
-          
-          const unsubscribe = onSnapshot(messagesCol, (snapshot) => {
-            const list = [];
-            snapshot.forEach((doc) => {
-              list.push({ id: doc.id, ...doc.data() });
-            });
-            list.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-            setLiveMessages(list);
-          }, (err) => {
-            console.error("Firestore error: ", err);
+        // exponential backoff helper
+        async fetchWithBackoff(url, options, retries = 3, delay = 1000) {
+          try {
+            const response = await fetch(url, options);
+            if (!response.ok) {
+              if (response.status === 429 && retries > 0) {
+                await new Promise(resolve => setTimeout(resolve, delay));
+                return this.fetchWithBackoff(url, options, retries - 1, delay * 2);
+              }
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response;
+          } catch (error) {
+            if (retries > 0) {
+              await new Promise(resolve => setTimeout(resolve, delay));
+              return this.fetchWithBackoff(url, options, retries - 1, delay * 2);
+            }
+            throw error;
+          }
+        },
+
+        // Unified Gemini AI Text Response Call
+        async fetchGeminiArtistResponse(artistId, userMsg) {
+          this.isAiTyping = true;
+          this.scrollChatToBottom();
+
+          const systemInstruction = {
+            karina: "당신은 aespa의 카리나입니다. 버블(Bubble) 1대1 채팅방에서 팬들과 대화하고 있습니다. 팬을 대할 때 매우 사근사근하고, 다정하며 배려심 넘치고 애교 있는 반말 어조를 사용해야 합니다. 고양이 이모티콘(😸, 🐱)과 파란색 하트(💙)를 아주 즐겨 씁니다. 팬의 이름은 '[이름]'으로 치환되거나 유저가 입력한 닉네임으로 불립니다. 대화는 친밀하고 사적인 일상을 공유하는 톤으로, 문장이 길어지지 않게(2~4문장) 정겨운 연예인의 일상 대화로 응답하세요. 기계적인 AI 느낌은 완전히 배제하세요.",
+            wonbin: "당신은 RIIZE의 원빈입니다. 버블(Bubble) 1대1 채팅방에서 팬들과 소통하고 있습니다. 시크해 보이지만 알고 보면 은근히 다정하고 부끄럼 타며 팬을 아끼는 반말 말투를 사용합니다. 기타(🎸) 이모티콘과 스마일, 물결무늬(~)를 자주 사용합니다. 음악, 노래 추천, 악기 연습 이야기나 소박한 일상(오늘 먹은 것, 산책 등)을 다정하게 나누는 톤입니다. 말수가 지나치게 많지 않고 담백하면서도 다정함을 담아 2~3문장 이내로 짧고 예쁘게 응답해 주세요.",
+            chaewon: "당신은 LE SSERAFIM의 김채원입니다. 버블(Bubble) 1대1 채팅방에서 팬들과 대화하고 있습니다. 아주 활발하고, 씩씩하며 애교 넘치고 텐션이 높은 귀여운 반말 어조를 사용합니다. 호랑이 이모티콘(🐯)과 빨간 하트(❤️)를 즐겨 씁니다. 유저를 놀리거나 아주 반가워하는 씩씩하고 밝은 리액션을 탑재하여 이야기해야 합니다. 장난스러운 리액션과 비타민 같은 긍정 에너지를 가득 담아 활기찬 2~4문장으로 톡톡 튀는 답장을 만들어 주세요."
+          }[artistId];
+
+          const apiKey = ""; // Self-injected by Canvas environment at runtime
+          // Use gemini-2.5-flash-preview-09-2025 as mandated for simulation
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+          const history = this.sandboxMessages[artistId].slice(-6).map(m => ({
+            role: m.senderId === 'fan' ? 'user' : 'model',
+            parts: [{ text: m.text }]
+          }));
+
+          history.push({
+            role: 'user',
+            parts: [{ text: userMsg }]
           });
 
-          setIsFirebaseLoading(false);
-          return () => unsubscribe && unsubscribe();
+          try {
+            const payload = {
+              contents: history,
+              systemInstruction: { parts: [{ text: systemInstruction }] },
+              generationConfig: { temperature: 0.85, maxOutputTokens: 150 }
+            };
 
-        } catch (error) {
-          console.error("Failed to initialize Firebase", error);
-          setDbStatus(`실패: ${error.message}`);
-          setIsFirebaseLoading(false);
-          setAppMode('sandbox');
+            const response = await this.fetchWithBackoff(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            // FIXED: Removed redundant double optional chaining syntax error (.?. => .?[0] or similar)
+            const textResponse = result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts[0] ? result.candidates[0].content.parts[0].text : null;
+
+            if (textResponse) {
+              this.playSound('receive');
+              const isVoice = Math.random() > 0.8;
+              const textClean = textResponse.trim();
+
+              this.sandboxMessages[artistId].push({
+                id: `gemini-art-${Date.now()}`,
+                senderId: artistId,
+                senderName: this.activeArtist().name,
+                text: textClean,
+                timestamp: new Date().toISOString(),
+                type: 'broadcast',
+                isVoice: isVoice,
+                voiceDuration: isVoice ? '0:05' : null
+              });
+
+              // Update last msg card snippet
+              const art = this.artists.find(a => a.id === artistId);
+              if (art) {
+                art.lastMsg = textClean;
+                if (!this.inChatRoom || this.selectedArtistId !== artistId) {
+                  art.unreadCount += 1;
+                }
+              }
+            } else {
+              throw new Error("No candidates received");
+            }
+
+          } catch (error) {
+            console.error("Gemini Simulation Error:", error);
+            // Fallback script on request failure
+            setTimeout(() => {
+              this.playSound('receive');
+              const arr = this.fallbackPool[artistId];
+              const randomMsg = arr[Math.floor(Math.random() * arr.length)];
+              
+              this.sandboxMessages[artistId].push({
+                id: `fallback-${Date.now()}`,
+                senderId: artistId,
+                senderName: this.activeArtist().name,
+                text: randomMsg.text,
+                timestamp: new Date().toISOString(),
+                type: 'broadcast'
+              });
+              this.scrollChatToBottom();
+            }, 1000);
+          } finally {
+            this.isAiTyping = false;
+            this.scrollChatToBottom();
+          }
+        },
+
+        // Request Surprise Photo Gift from Artist (Structured output via Gemini & Imagen-4)
+        async requestArtistPhotoGift() {
+          if (this.isGeneratingPhoto) return;
+          this.isGeneratingPhoto = true;
+          this.isAiTyping = true;
+          this.showToast(`${this.activeArtist().name} 님이 갤러리 뒤적거리는 중... 📸`, 'info');
+          this.scrollChatToBottom();
+
+          const apiKey = "";
+          // Get caption + prompt from Gemini structured schema
+          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+          const promptInstructions = `당신은 ${this.activeArtist().name}(${this.activeArtist().group} 소속)의 버블 아이돌 대화 중입니다. 
+          오늘 팬을 위해 전송할 따뜻하고 세련된 일상 사진을 구상하고 있습니다. 
+          다음 2가지 속성을 담아 반드시 완벽한 JSON 오브젝트로만 반환하세요:
+          1. "caption": 사진을 건네며 팬에게 보낼 아주 귀엽고 다정한 한국어 한마디 (예: "오늘 커피 마시다가 하늘이 이뻐서 찍었어 💙")
+          2. "imagePrompt": 이 사진을 고화질 극사실주의 일상 인화지 사진 느낌으로 생성하기 위한 상세한 영어 Imagen 프롬프트 (예: "A high-quality aesthetic cozy photo of a delicious iced latte with cute cat-shaped foam on a marble coffee table in a modern minimal cafe, soft natural sunshine, polaroid style, 4k resolution")`;
+
+          try {
+            const geminiPayload = {
+              contents: [{ parts: [{ text: promptInstructions }] }],
+              generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                  type: "OBJECT",
+                  properties: {
+                    caption: { type: "STRING" },
+                    imagePrompt: { type: "STRING" }
+                  },
+                  required: ["caption", "imagePrompt"]
+                }
+              }
+            };
+
+            const geminiRes = await this.fetchWithBackoff(geminiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(geminiPayload)
+            });
+            const geminiJson = await geminiRes.json();
+            // FIXED: Removed redundant double optional chaining syntax error (.?. => .?[0] or similar)
+            const textRaw = geminiJson.candidates && geminiJson.candidates[0] && geminiJson.candidates[0].content && geminiJson.candidates[0].content.parts && geminiJson.candidates[0].content.parts[0] ? geminiJson.candidates[0].content.parts[0].text : null;
+            if (!textRaw) throw new Error("No Gemini schema parsed");
+            
+            const parsed = JSON.parse(textRaw);
+            const captionVal = parsed.caption || "예쁜 사진 선물 보낼게! 💙";
+            const promptVal = parsed.imagePrompt || "A gorgeous minimal Korean background aesthetic with soft warm lighting, cozy mood";
+
+            // Call Imagen-4
+            const imagenUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
+            const imagenPayload = {
+              instances: [{ prompt: promptVal }],
+              parameters: { sampleCount: 1 }
+            };
+
+            const imagenRes = await this.fetchWithBackoff(imagenUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(imagenPayload)
+            });
+            const imagenJson = await imagenRes.json();
+            // FIXED: Removed redundant double optional chaining syntax error (.?. => .?[0] or similar)
+            const bytesBase64 = imagenJson.predictions && imagenJson.predictions[0] ? imagenJson.predictions[0].bytesBase64Encoded : null;
+
+            if (bytesBase64) {
+              const imageSource = `data:image/png;base64,${bytesBase64}`;
+              this.playSound('receive');
+
+              this.sandboxMessages[this.selectedArtistId].push({
+                id: `photo-gift-${Date.now()}`,
+                senderId: this.selectedArtistId,
+                senderName: this.activeArtist().name,
+                text: captionVal,
+                imageUrl: imageSource,
+                timestamp: new Date().toISOString(),
+                type: 'broadcast'
+              });
+
+              const art = this.artists.find(a => a.id === this.selectedArtistId);
+              if (art) art.lastMsg = `📸 [사진] ${captionVal}`;
+
+              this.showToast("새 사진 선물이 도착했습니다! 🥰", 'success');
+            } else {
+              throw new Error("No image data returned");
+            }
+
+          } catch (e) {
+            console.error("Visual generation failed:", e);
+            this.showToast("서버가 혼잡해 사진을 고르지 못했습니다. 잠시 후 시도하세요!", 'warning');
+          } finally {
+            this.isGeneratingPhoto = false;
+            this.isAiTyping = false;
+            this.scrollChatToBottom();
+          }
+        },
+
+        // Artist Role simulation triggers
+        triggerArtistBroadcast(text, isVoice = false) {
+          this.playSound('send');
+
+          const mockCast = {
+            id: `artist-${Date.now()}`,
+            senderId: this.selectedArtistId,
+            senderName: this.activeArtist().name,
+            text: text,
+            timestamp: new Date().toISOString(),
+            type: 'broadcast',
+            isVoice: isVoice,
+            voiceDuration: isVoice ? '0:07' : null
+          };
+
+          if (this.appMode === 'sandbox') {
+            this.sandboxMessages[this.selectedArtistId].push(mockCast);
+            
+            const art = this.artists.find(a => a.id === this.selectedArtistId);
+            if (art) art.lastMsg = text;
+            this.scrollChatToBottom();
+
+            // Simulate incoming comments from multiple fans
+            setTimeout(() => {
+              const loops = Math.floor(Math.random() * 3) + 2;
+              const feedbackList = [
+                "진짜 대박... 너무 좋아 ㅠㅠ",
+                "오늘도 힘내세요!! 밥 꼭 챙겨 먹기!",
+                "목소리 너무 감미로워요 사랑해요!!",
+                "이 톡 보려고 오늘 하루 참았다 정말루",
+                "언제나 응원하고 있어요 ㅎㅎ",
+                "감기 걸리지 마요!"
+              ];
+
+              for (let i = 0; i < loops; i++) {
+                const randomUser = `러브팬-${Math.floor(Math.random()*900)+100}`;
+                const textSeed = feedbackList[Math.floor(Math.random()*feedbackList.length)];
+                this.artistConsoleReplies.unshift({
+                  id: `reply-${Date.now()}-${i}`,
+                  fanName: randomUser,
+                  text: textSeed,
+                  timestamp: new Date().toISOString()
+                });
+              }
+              this.artistConsoleReplies = this.artistConsoleReplies.slice(0, 15);
+            }, 1200);
+
+          } else {
+            this.saveMessageToFirebase(mockCast);
+          }
+        },
+
+        // Custom Web Speech Voice Note Synthesis
+        playVoiceNote(msgId, text) {
+          this.playSound('receive');
+          if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const rawText = this.parseMessage(text, this.userName).replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣?.!~❤️💙🐯🎸]/g, '');
+            const utterance = new SpeechSynthesisUtterance(rawText);
+            utterance.lang = 'ko-KR';
+            utterance.rate = 0.95;
+            utterance.pitch = this.selectedArtistId === 'wonbin' ? 0.8 : 1.1;
+            window.speechSynthesis.speak(utterance);
+            this.showToast(`${this.activeArtist().name}의 보이스가 흘러나옵니다... 🎙️`, 'info');
+          } else {
+            this.showToast("음성 합성이 지원되지 않는 브라우저입니다.", 'warning');
+          }
+        },
+
+        // Floating heart emitter logic
+        emitLiveHeart() {
+          this.playSound('heart');
+          const id = Date.now();
+          const left = Math.floor(Math.random() * 60) + 20; // 20% to 80%
+          this.liveHearts.push({ id, left });
+          setTimeout(() => {
+            this.liveHearts = this.liveHearts.filter(h => h.id !== id);
+          }, 1200);
+        },
+
+        handleLiveCommentSubmit() {
+          if (!this.liveChatInput.trim()) return;
+          this.liveComments.push({
+            user: this.userName,
+            text: this.liveChatInput
+          });
+          this.liveChatInput = '';
+        },
+
+        // Real-time Mode toggle linking (Adhering to Firestore Rules 1, 2, 3)
+        async setAppMode(mode) {
+          this.appMode = mode;
+          if (mode === 'live') {
+            this.dbStatus = '인증 및 연동 중...';
+            try {
+              const appId = typeof __app_id !== 'undefined' ? __app_id : 'bubble-artifact-id';
+              const firebaseConfigRaw = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+              const customToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+              if (!firebaseConfigRaw) {
+                this.showToast("유효한 실시간 설정 토큰이 없어 가상 시뮬레이터로 유지합니다.");
+                this.appMode = 'sandbox';
+                this.dbStatus = '가상 샌드박스 (로컬)';
+                return;
+              }
+
+              // Import Firebase modules
+              const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
+              const { getAuth, signInAnonymously, signInWithCustomToken } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
+              const { getFirestore, collection, onSnapshot } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+
+              const config = JSON.parse(firebaseConfigRaw);
+              const app = initializeApp(config);
+              const db = getFirestore(app);
+              const auth = getAuth(app);
+
+              // RULE 3: Auth Before Queries
+              let credential;
+              if (customToken) {
+                credential = await signInWithCustomToken(auth, customToken);
+              } else {
+                credential = await signInAnonymously(auth);
+              }
+
+              const uid = credential.user.uid;
+              this.dbInstance = db;
+              this.authInstance = auth;
+              this.dbStatus = `연결됨 (UID: ${uid.substring(0, 6)})`;
+              this.showToast("실시간 협업 버블 채널이 활성화되었습니다!", "success");
+
+              // RULE 1 & 2: Strict Paths & No Complex Queries
+              const messagesCol = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+              
+              onSnapshot(messagesCol, (snapshot) => {
+                const list = [];
+                snapshot.forEach((doc) => {
+                  list.push({ id: doc.id, ...doc.data() });
+                });
+                // Sort inside memory (Rule 2)
+                list.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                this.liveMessages = list;
+                this.scrollChatToBottom();
+              }, (err) => {
+                console.error("Firestore Listen Error:", err);
+              });
+
+            } catch (err) {
+              console.error("Firebase load err:", err);
+              this.dbStatus = '연동 실패 (가상 샌드박스 유지)';
+              this.appMode = 'sandbox';
+              this.showToast("실시간 망을 연결할 수 없어 가상 버블로 복귀합니다.", "warning");
+            }
+          } else {
+            this.dbStatus = '가상 샌드박스 (로컬)';
+            this.showToast("로컬 가상 AI 모드로 전환되었습니다.");
+          }
+        },
+
+        async saveMessageToFirebase(msgObj) {
+          if (!this.dbInstance || !this.authInstance?.currentUser) return;
+          try {
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'bubble-artifact-id';
+            const { collection, addDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+            
+            const messagesCol = collection(this.dbInstance, 'artifacts', appId, 'public', 'data', 'messages');
+            await addDoc(messagesCol, {
+              ...msgObj,
+              artistId: this.selectedArtistId,
+              timestamp: new Date().toISOString()
+            });
+          } catch(e) {
+            console.error("Firestore write err:", e);
+          }
         }
-      };
-      loadFirebase();
-    }
-  }, [appMode]);
 
-  const saveMessageToFirebase = async (msgObj) => {
-    if (!dbRef.current || !authRef.current?.currentUser) return;
-    const app_id = typeof __app_id !== 'undefined' ? __app_id : 'bubble-default-id';
-    
-    try {
-      const { collection, addDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-      const messagesCol = collection(dbRef.current, 'artifacts', app_id, 'public', 'data', 'messages');
-      
-      await addDoc(messagesCol, {
-        ...msgObj,
-        artistId: selectedArtistId,
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error("Error writing message to Firestore: ", error);
-    }
-  };
-
-  const displayedMessages = appMode === 'sandbox' 
-    ? (sandboxMessages[selectedArtistId] || []) 
-    : liveMessages.filter(m => m.artistId === selectedArtistId);
-
-  return (
-    <div className="flex h-screen w-screen bg-slate-950 font-sans text-slate-800 overflow-hidden select-none">
-      
-      {/* Toast Alert Portal */}
-      <div className="fixed top-4 right-4 z-50 space-y-2 pointer-events-none max-w-sm">
-        {toasts.map(toast => (
-          <div 
-            key={toast.id} 
-            className={`p-3.5 rounded-2xl shadow-xl flex items-center gap-2.5 text-xs font-semibold border text-white pointer-events-auto animate-slide-up ${
-              toast.type === 'success' ? 'bg-emerald-500/95 border-emerald-400' :
-              toast.type === 'warning' ? 'bg-amber-500/95 border-amber-400' :
-              'bg-slate-900/95 border-slate-700'
-            }`}
-          >
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span className="flex-1">{toast.message}</span>
-            <button 
-              onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))} 
-              className="p-0.5 hover:bg-white/10 rounded-full transition-all"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        ))}
-      </div>
-
-      {/* Sidebar: Control Panel / Config Mode */}
-      <div className="hidden lg:flex flex-col w-96 bg-slate-900 border-r border-slate-800 p-6 justify-between text-slate-100 overflow-y-auto">
-        <div className="space-y-6">
-          <div className="flex items-center space-x-3">
-            <div className="bg-gradient-to-tr from-pink-500 to-indigo-500 p-2.5 rounded-2xl shadow-lg shadow-indigo-500/30">
-              <Sparkles className="h-6 w-6 text-white animate-pulse" />
-            </div>
-            <div>
-              <h1 className="font-black text-xl tracking-tight bg-gradient-to-r from-pink-400 to-indigo-400 bg-clip-text text-transparent">최애의 버블 2.0</h1>
-              <p className="text-xs text-slate-400 font-medium">Gemini AI 실시간 반응 시뮬레이터</p>
-            </div>
-          </div>
-
-          {/* Connected Gemini Info Banner */}
-          <div className="bg-indigo-950/40 border border-indigo-800/60 p-3.5 rounded-2xl space-y-1.5">
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="bg-indigo-500 text-white px-2 py-0.5 rounded-full font-black tracking-wider text-[9px]">GEMINI ACTIVE</span>
-              <span className="text-indigo-300 font-medium">Flash-3 & Imagen-4</span>
-            </div>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              최애 아티스트들이 이제 **실시간 인공지능**으로 팬분들의 메시지에 답장하고, 상황에 어울리는 일상 사진 선물을 구상해서 직접 생성하여 보냅니다!
-            </p>
-          </div>
-
-          {/* Mode Switcher */}
-          <div className="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700/50 space-y-2">
-            <h2 className="text-sm font-bold text-pink-400 flex items-center gap-1.5">
-              <Info className="w-4 h-4" /> 연결 모드 설정
-            </h2>
-            <div className="grid grid-cols-2 gap-2 mt-2">
-              <button 
-                onClick={() => {
-                  setAppMode('sandbox');
-                  showToast("가상 AI 시뮬레이터 모드로 전환되었습니다.");
-                }}
-                className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${
-                  appMode === 'sandbox' 
-                    ? 'bg-pink-500 text-white shadow-md shadow-pink-500/20' 
-                    : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
-                }`}
-              >
-                가상 시뮬 (Gemini)
-              </button>
-              <button 
-                onClick={() => {
-                  setAppMode('live');
-                  showToast("실시간 멀티 대화방 모드로 전환되었습니다.");
-                }}
-                className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 ${
-                  appMode === 'live' 
-                    ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/20' 
-                    : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
-                }`}
-              >
-                실시간 연동 (Live)
-              </button>
-            </div>
-          </div>
-
-          {/* Role Switching */}
-          <div className="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700/50 space-y-2">
-            <h2 className="text-sm font-bold text-indigo-400 flex items-center gap-1.5">
-              <User className="w-4 h-4" /> 내 역할 선택
-            </h2>
-            <div className="grid grid-cols-2 gap-2">
-              <button 
-                onClick={() => {
-                  setUserRole('fan');
-                  showToast("수신자(팬) 시뮬레이션 모드로 전환되었습니다.");
-                }}
-                className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${
-                  userRole === 'fan' 
-                    ? 'bg-indigo-500 text-white' 
-                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                }`}
-              >
-                🙋‍♀️ 팬 모드 (수신)
-              </button>
-              <button 
-                onClick={() => {
-                  setUserRole('artist');
-                  showToast("송신자(아티스트) 방송 제어실로 입장했습니다.");
-                }}
-                className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${
-                  userRole === 'artist' 
-                    ? 'bg-purple-600 text-white' 
-                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                }`}
-              >
-                👑 아티스트 모드
-              </button>
-            </div>
-          </div>
-
-          {/* Customization Details */}
-          <div className="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/50 space-y-3.5">
-            <h2 className="text-sm font-bold text-slate-300 flex items-center gap-1.5">
-              <Palette className="w-4 h-4" /> 퍼스널라이징
-            </h2>
-            
-            {/* Nickname modification */}
-            <div className="space-y-1">
-              <label className="text-[11px] text-slate-400 font-medium">팬 닉네임 설정</label>
-              <input 
-                type="text" 
-                value={userName} 
-                onChange={(e) => setUserName(e.target.value.slice(0, 10))}
-                className="w-full bg-slate-700/60 border border-slate-600 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
-              />
-            </div>
-
-            {/* Subscription Day Modification */}
-            <div className="space-y-1">
-              <label className="text-[11px] text-slate-400 font-medium">구독 일수 (D+Day)</label>
-              <input 
-                type="number" 
-                value={subDays} 
-                onChange={(e) => setSubDays(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-full bg-slate-700/60 border border-slate-600 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none"
-              />
-            </div>
-
-            {/* Background Color Picker */}
-            <div className="space-y-1">
-              <label className="text-[11px] text-slate-400 font-medium">채팅방 배경색</label>
-              <div className="flex gap-1.5">
-                {['#f8fafc', '#ecf2ff', '#fff0f5', '#eefbfb', '#0f172a'].map((color) => (
-                  <button 
-                    key={color} 
-                    onClick={() => setChatBg(color)}
-                    style={{ backgroundColor: color }}
-                    className={`w-6 h-6 rounded-full border-2 ${chatBg === color ? 'border-pink-500' : 'border-transparent'}`}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Chat Bubble Opacity */}
-            <div className="space-y-1">
-              <div className="flex justify-between text-[11px] text-slate-400 font-medium">
-                <span>버블 투명도</span>
-                <span>{bubbleOpacity}%</span>
-              </div>
-              <input 
-                type="range" 
-                min="30" 
-                max="100" 
-                value={bubbleOpacity} 
-                onChange={(e) => setBubbleOpacity(parseInt(e.target.value))}
-                className="w-full accent-pink-500" 
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Info panel at bottom */}
-        <div className="space-y-2 mt-4 pt-4 border-t border-slate-800">
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>네트워크 상태:</span>
-            <span className={`font-semibold ${dbStatus.startsWith('연결됨') ? 'text-green-400' : 'text-amber-400'}`}>
-              {dbStatus}
-            </span>
-          </div>
-          <p className="text-[10px] text-slate-500 leading-relaxed">
-            * 꿀팁: '가상 시뮬'에서 원하는 아무 말이나 건네면, Gemini AI가 각 연예인 고유의 감성적 말투로 찰떡같은 대답을 선물합니다.
-          </p>
-        </div>
-      </div>
-
-      {/* Mobile-sized Screen Mockup in the center */}
-      <div className="flex-1 flex justify-center items-center p-0 sm:p-4 bg-gradient-to-br from-slate-950 to-slate-900">
-        <div className="relative w-full h-full sm:max-w-[430px] sm:h-[860px] bg-white sm:rounded-[40px] shadow-2xl overflow-hidden flex flex-col border border-slate-800/40">
-          
-          {/* Simulated iOS status bar style */}
-          <div className="bg-white px-6 py-2 flex justify-between items-center text-xs text-slate-800 font-semibold select-none border-b border-slate-100">
-            <span>9:41</span>
-            <div className="flex items-center gap-1.5 text-[11px]">
-              <span className={`text-[9px] font-black px-1.5 py-0.5 rounded ${
-                appMode === 'live' ? 'bg-indigo-100 text-indigo-700' : 'bg-pink-100 text-pink-600'
-              }`}>
-                {appMode === 'live' ? 'LIVE SYNC' : 'GEMINI AI'}
-              </span>
-              <span>📶</span>
-              <span>🔋</span>
-            </div>
-          </div>
-
-          {/* Quick Mobile role toggle (Visible only on small screens) */}
-          <div className="lg:hidden flex bg-slate-900 text-white p-2.5 justify-around text-xs font-bold border-b border-slate-800">
-            <button 
-              onClick={() => {
-                setUserRole(prev => prev === 'fan' ? 'artist' : 'fan');
-                showToast(`역할이 전환되었습니다!`);
-              }}
-              className="bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg text-xs flex items-center gap-1 transition-all"
-            >
-              <RefreshCw className="w-3.5 h-3.5" /> 
-              역할: {userRole === 'fan' ? '🙋‍♀️ 팬' : '👑 아티스트'}
-            </button>
-            <button 
-              onClick={() => {
-                setAppMode(prev => prev === 'sandbox' ? 'live' : 'sandbox');
-                showToast(`작동 모드가 전환되었습니다!`);
-              }}
-              className="bg-pink-600 hover:bg-pink-700 px-3 py-1 rounded-lg text-xs transition-all"
-            >
-              모드: {appMode === 'sandbox' ? '가상 (AI)' : '실시간(Live)'}
-            </button>
-          </div>
-
-          {/* Main App Workspace */}
-          <div className="flex-1 flex flex-col overflow-hidden relative" style={{ backgroundColor: chatBg }}>
-            
-            {/* SCREEN 1: BUBBLE LIVE (Overlay Screen) */}
-            {isLiveActive && (
-              <div className="absolute inset-0 bg-slate-950/95 z-50 flex flex-col text-white animate-fade-in">
-                {/* Live Header */}
-                <div className="p-4 flex justify-between items-center border-b border-slate-800">
-                  <div className="flex items-center gap-2">
-                    <span className="bg-rose-600 text-white font-black px-2 py-0.5 rounded-md text-[10px] animate-pulse">LIVE</span>
-                    <span className="text-sm font-bold">{activeArtist.name} 보이스 라이브</span>
-                  </div>
-                  <button 
-                    onClick={() => { setIsLiveActive(false); }} 
-                    className="p-1.5 hover:bg-slate-800 rounded-full transition-all"
-                  >
-                    <ArrowLeft className="w-5 h-5 text-slate-400" />
-                  </button>
-                </div>
-
-                {/* Live Stage Body */}
-                <div className="flex-1 flex flex-col justify-center items-center p-6 text-center space-y-6">
-                  {/* Floating heart animator */}
-                  <div className="relative w-full h-48 flex justify-center items-center">
-                    <div className="relative">
-                      <img 
-                        src={activeArtist.avatar} 
-                        className="w-24 h-24 rounded-full border-4 border-pink-500 shadow-xl shadow-pink-500/20 object-cover animate-pulse"
-                        alt="Artist Avatar" 
-                      />
-                      <div className="absolute -bottom-1 -right-1 bg-pink-500 p-1.5 rounded-full">
-                        <Volume2 className="w-4 h-4 text-white animate-bounce" />
-                      </div>
-                    </div>
-                    {liveHearts.map(heart => (
-                      <div key={heart.id} className={heart.style}>❤️</div>
-                    ))}
-                  </div>
-
-                  <div>
-                    <h3 className="font-bold text-lg">{activeArtist.name} 님이 라이브 소통 중</h3>
-                    <p className="text-xs text-slate-400 mt-1">"최애의 보이스를 들으며 댓글로 실시간 이야기를 나눠요"</p>
-                  </div>
-
-                  {/* Simulated Audio Spectrum Bar */}
-                  <div className="flex items-center gap-1.5 h-10">
-                    {[1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1].map((val, i) => (
-                      <div 
-                        key={i} 
-                        className="bg-gradient-to-t from-pink-500 to-indigo-500 w-1.5 rounded-full animate-bounce" 
-                        style={{ 
-                          height: `${val * 8}px`,
-                          animationDelay: `${i * 0.12}s`,
-                          animationDuration: '0.9s'
-                        }} 
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                {/* Live Comments section */}
-                <div className="h-44 bg-slate-900/60 flex flex-col border-t border-slate-800/80">
-                  <div className="flex-1 overflow-y-auto p-3 space-y-2 text-xs">
-                    {liveComments.map((com, index) => (
-                      <div key={index} className="flex gap-1.5 items-start">
-                        <span className="text-pink-400 font-bold shrink-0">{com.user}:</span>
-                        <span className="text-slate-200">{com.text}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <form onSubmit={handleLiveComment} className="p-2 border-t border-slate-800 flex gap-2">
-                    <input 
-                      type="text" 
-                      value={liveChatInput}
-                      onChange={(e) => setLiveChatInput(e.target.value)}
-                      placeholder="따뜻한 댓글을 남겨주세요"
-                      className="flex-1 bg-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-pink-500 placeholder-slate-500"
-                    />
-                    <button 
-                      type="button" 
-                      onClick={emitLiveHeart}
-                      className="bg-pink-500 hover:bg-pink-600 p-2 rounded-xl transition-all shrink-0"
-                    >
-                      <Heart className="w-4 h-4 text-white fill-current" />
-                    </button>
-                    <button 
-                      type="submit" 
-                      className="bg-indigo-600 hover:bg-indigo-700 px-3 rounded-xl font-bold text-xs shrink-0"
-                    >
-                      전송
-                    </button>
-                  </form>
-                </div>
-              </div>
-            )}
-
-            
-            {/* VIEW 1: Artists Subscription List */}
-            {activeTab === 'artists' && (
-              <div className="flex-1 flex flex-col bg-slate-50/50 p-4 animate-fade-in overflow-y-auto">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="font-extrabold text-lg text-slate-800">구독 중인 아티스트</h2>
-                  <span className="bg-indigo-100 text-indigo-700 text-xs font-bold px-2.5 py-1 rounded-full">
-                    {DEFAULT_ARTISTS.length}명 대화 중
-                  </span>
-                </div>
-
-                <div className="space-y-3">
-                  {DEFAULT_ARTISTS.map((art) => (
-                    <div 
-                      key={art.id} 
-                      onClick={() => handleSelectArtist(art.id)}
-                      className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all border border-slate-100 flex items-center gap-3.5 cursor-pointer transform hover:-translate-y-0.5"
-                    >
-                      <img 
-                        src={art.avatar} 
-                        className="w-12 h-12 rounded-full object-cover border-2 border-slate-100" 
-                        alt={art.name} 
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-sm text-slate-800">{art.name}</span>
-                          <span className="text-[10px] text-slate-400 font-semibold">{art.group}</span>
-                        </div>
-                        <p className="text-xs text-slate-500 truncate mt-0.5">{art.statusMessage}</p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <span className="text-[10px] bg-pink-100 text-pink-600 font-extrabold px-2 py-1 rounded-full">
-                          D+{art.dDay}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Interactive Guide Banner */}
-                <div className="bg-gradient-to-r from-pink-50 to-indigo-50 border border-pink-100 p-4 rounded-3xl mt-6 space-y-2">
-                  <h3 className="text-xs font-bold text-slate-700 flex items-center gap-1">
-                    <Award className="w-4 h-4 text-pink-500" /> 버블 기념일(D-Day) 혜택
-                  </h3>
-                  <p className="text-[11px] text-slate-500 leading-relaxed">
-                    최애 아티스트와 소통한 시간이 늘어날수록, 아티스트가 보내는 메시지에 대해 답장할 수 있는 글자 수가 점차 증가합니다! (기본 30자 / 100일 50자 / 365일 100자)
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* VIEW 2: Chat View Screen */}
-            {activeTab === 'chats' && (
-              <div className="flex-1 flex flex-col h-full overflow-hidden">
-                {/* Chat Header */}
-                <div className="px-4 py-3 bg-white/95 border-b border-slate-100 flex justify-between items-center backdrop-blur-sm z-10">
-                  <div className="flex items-center gap-2.5">
-                    <img 
-                      src={activeArtist.avatar} 
-                      className="w-9 h-9 rounded-full object-cover border border-slate-200"
-                      alt={activeArtist.name} 
-                    />
-                    <div>
-                      <div className="flex items-center gap-1">
-                        <span className="font-bold text-sm text-slate-800">{activeArtist.name}</span>
-                        <span className="text-[9px] bg-slate-100 text-slate-500 px-1 py-0.2 rounded font-semibold">
-                          {activeArtist.group}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 text-[10px] text-pink-500 font-semibold">
-                        <span>D+{subDays}</span>
-                        <span className="text-slate-300">•</span>
-                        <span>실시간 소통 중</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    {/* Imagen Photo Generator Request Button (only on sandbox mode & fan role) */}
-                    {appMode === 'sandbox' && userRole === 'fan' && (
-                      <button
-                        onClick={requestArtistPhotoGift}
-                        disabled={isGeneratingPhoto}
-                        className={`p-2 rounded-full text-indigo-600 hover:bg-slate-100 transition-all ${
-                          isGeneratingPhoto ? 'animate-spin opacity-50' : ''
-                        }`}
-                        title="최애에게 사진 선물 요청하기"
-                      >
-                        <Camera className="w-4.5 h-4.5" />
-                      </button>
-                    )}
-                    <button 
-                      onClick={() => setIsLiveActive(true)}
-                      className="p-1.5 hover:bg-slate-100 rounded-full text-rose-500 transition-all"
-                      title="보이스 라이브"
-                    >
-                      <Phone className="w-4.5 h-4.5" />
-                    </button>
-                    <button 
-                      onClick={() => {
-                        const nextId = DEFAULT_ARTISTS[(DEFAULT_ARTISTS.findIndex(a => a.id === selectedArtistId) + 1) % DEFAULT_ARTISTS.length].id;
-                        setSelectedArtistId(nextId);
-                      }} 
-                      className="p-1.5 hover:bg-slate-100 rounded-full text-slate-600 transition-all"
-                      title="아티스트 변경"
-                    >
-                      <RefreshCw className="w-4.5 h-4.5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Subscriptions Days Notification Badge */}
-                <div className="bg-pink-500/10 border-b border-pink-500/5 px-4 py-1.5 text-center text-[10px] text-pink-600 font-semibold flex items-center justify-center gap-1.5 select-none">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>{activeArtist.name} 님과 함께한 지 <b>{subDays}일</b>째 되는 날 💖</span>
-                </div>
-
-                {/* Chat Messages Area */}
-                <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-                  {displayedMessages.map((msg) => {
-                    const isMe = msg.senderId === 'fan';
-                    return (
-                      <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} items-end gap-1.5`}>
-                        
-                        {/* Profile Image (only for Artist messages) */}
-                        {!isMe && (
-                          <img 
-                            src={activeArtist.avatar} 
-                            className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-100 shadow-sm"
-                            alt="avatar" 
-                          />
-                        )}
-
-                        <div className="flex flex-col max-w-[70%]">
-                          {/* Sender Name for Artist */}
-                          {!isMe && (
-                            <span className="text-[10px] text-slate-500 mb-0.5 ml-1 font-semibold">{msg.senderName}</span>
-                          )}
-
-                          {/* Bubble Container */}
-                          <div className="relative group">
-                            <div 
-                              style={{ 
-                                backgroundColor: isMe ? activeArtist.themeColor : '#ffffff',
-                                color: isMe ? '#ffffff' : '#1e293b',
-                                opacity: bubbleOpacity / 100 
-                              }}
-                              className={`rounded-2xl px-3.5 py-2 text-xs shadow-sm border ${
-                                isMe 
-                                  ? 'rounded-tr-none border-transparent' 
-                                  : 'rounded-tl-none border-slate-100'
-                              } whitespace-pre-line break-words`}
-                            >
-                              {/* If voice bubble */}
-                              {msg.isVoice ? (
-                                <button 
-                                  onClick={() => playVoiceNote(msg.id, msg.text)}
-                                  className="flex items-center gap-2 font-bold text-left focus:outline-none"
-                                >
-                                  <div className="p-1 bg-pink-100 rounded-full">
-                                    <Mic className="w-3.5 h-3.5 text-pink-500 animate-pulse" />
-                                  </div>
-                                  <div className="text-xs">
-                                    <span className="block text-[10px] opacity-75">음성 메시지 {msg.voiceDuration}</span>
-                                    <span className="text-pink-600 text-[10px]">▶ 듣기 (음성 합성 재생)</span>
-                                  </div>
-                                </button>
-                              ) : (
-                                /* Normal text parsing variables like [이름] */
-                                <>
-                                  {parseMessage(msg.text, userName)}
-                                  {msg.imageUrl && (
-                                    <div className="mt-2 rounded-xl overflow-hidden shadow-inner border border-slate-100 bg-slate-50">
-                                      <img 
-                                        src={msg.imageUrl} 
-                                        alt="Artist Gift" 
-                                        className="w-full h-auto object-cover max-h-52"
-                                        loading="lazy" 
-                                      />
-                                    </div>
-                                  )}
-                                </>
-                              )}
-                            </div>
-
-                            {/* Translate Button for non-me messages */}
-                            {!isMe && !msg.isVoice && (
-                              <button 
-                                onClick={() => {
-                                  showToast(`해외 팬분들을 위한 임시 번역이 적용되었습니다! ✨`, 'success');
-                                }}
-                                className="absolute -right-6 bottom-0.5 opacity-0 group-hover:opacity-100 p-0.5 bg-white/95 border border-slate-200 rounded text-slate-500 hover:text-indigo-500 transition-all cursor-pointer"
-                                title="번역하기"
-                              >
-                                <Globe className="w-3 h-3" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Read count (Real Bubble has '1' count, representing 1-on-1 feeling) */}
-                        <div className="flex flex-col items-center justify-end h-full shrink-0">
-                          <span className="text-[9px] text-pink-500 font-bold leading-none mb-1">1</span>
-                          <span className="text-[8px] text-slate-400 select-none">
-                            {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-
-                      </div>
-                    );
-                  })}
-
-                  {/* Typing Indicator for AI (Gemini) */}
-                  {isAiTyping && (
-                    <div className="flex justify-start items-end gap-1.5 animate-pulse">
-                      <img 
-                        src={activeArtist.avatar} 
-                        className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-100 shadow-sm"
-                        alt="typing" 
-                      />
-                      <div className="flex flex-col max-w-[70%]">
-                        <span className="text-[10px] text-slate-400 mb-0.5 ml-1 font-semibold">{activeArtist.name}</span>
-                        <div className="bg-white rounded-2xl rounded-tl-none px-4 py-2 text-xs border border-slate-100 text-slate-400 flex items-center gap-2">
-                          <span>{activeArtist.name} 님이 답장을 생각 중...</span>
-                          <span className="flex gap-1">
-                            <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
-                            <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></span>
-                            <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></span>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div ref={messagesEndRef} />
-                </div>
-
-                {/* Chat Footer Input Area for Fan Role */}
-                {userRole === 'fan' && (
-                  <form onSubmit={handleSendMessage} className="p-3 bg-white/95 border-t border-slate-100 flex flex-col gap-1.5 z-10">
-                    <div className="flex items-center gap-2">
-                      <button 
-                        type="button" 
-                        onClick={() => showToast("사진/동영상 업로드 기능은 현재 프리미엄 등급만 가능합니다! 📸", "warning")}
-                        className="p-1.5 hover:bg-slate-100 rounded-full text-slate-400 transition-all shrink-0"
-                      >
-                        <ImageIcon className="w-5 h-5" />
-                      </button>
-
-                      <input 
-                        type="text" 
-                        value={messageInput}
-                        onChange={(e) => setMessageInput(e.target.value)}
-                        placeholder={isAiTyping ? "최애의 답장을 기다려주세요..." : `${getCharLimit()}자 이내로 따뜻한 답장을 남겨주세요`}
-                        maxLength={getCharLimit()}
-                        disabled={isAiTyping}
-                        className="flex-1 bg-slate-100 rounded-2xl px-4 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 placeholder-slate-400"
-                      />
-
-                      <button 
-                        type="submit" 
-                        disabled={!messageInput.trim() || isAiTyping}
-                        style={{ backgroundColor: activeArtist.themeColor }}
-                        className="p-2 text-white rounded-full hover:brightness-110 transition-all disabled:opacity-50 shrink-0"
-                      >
-                        <Send className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    {/* Word Counts status under input */}
-                    <div className="flex justify-between items-center px-1 text-[9px] text-slate-400">
-                      <span>답장 가능 글자 수: <b className="text-slate-600">{getCharLimit()}자</b></span>
-                      <span>{messageInput.length} / {getCharLimit()} 자</span>
-                    </div>
-                  </form>
-                )}
-
-                {/* Chat Footer Input Area for Artist Role (Simulating Broadcasting dashboard) */}
-                {userRole === 'artist' && (
-                  <div className="p-3 bg-slate-950 border-t border-slate-800 text-white flex flex-col gap-3.5 z-10 animate-slide-up">
-                    <div className="flex justify-between items-center border-b border-slate-800 pb-1.5">
-                      <span className="text-xs font-extrabold text-pink-400 flex items-center gap-1">
-                        <Sparkles className="w-3.5 h-3.5" /> 아티스트 연동 제어실
-                      </span>
-                      <span className="text-[10px] text-slate-400">※ 입력 창에 [이름] 치환 태그 사용 가능</span>
-                    </div>
-
-                    <div className="space-y-2">
-                      {/* Preset One-click high-flutters bubbles */}
-                      <div className="flex gap-1.5 overflow-x-auto pb-1 text-[10px]">
-                        <button 
-                          onClick={() => triggerArtistBroadcast("오늘 안무 연습 중인데 갑자기 [이름]이 생각났어 🦁")}
-                          className="bg-slate-900 hover:bg-slate-800 px-2.5 py-1 rounded-full shrink-0 border border-slate-800"
-                        >
-                          💬 안무연습
-                        </button>
-                        <button 
-                          onClick={() => triggerArtistBroadcast("혹시 밥은 먹었어? [이름]아! 꼬박꼬박 잘 챙겨 먹어야 해!!")}
-                          className="bg-slate-900 hover:bg-slate-800 px-2.5 py-1 rounded-full shrink-0 border border-slate-800"
-                        >
-                          🍚 밥 챙겨먹기
-                        </button>
-                        <button 
-                          onClick={() => triggerArtistBroadcast("오늘 진짜 귀여운 고양이 동영상 발견했는데 공유해 주고 싶당 🐱")}
-                          className="bg-slate-900 hover:bg-slate-800 px-2.5 py-1 rounded-full shrink-0 border border-slate-800"
-                        >
-                          🐱 고양이공유
-                        </button>
-                        <button 
-                          onClick={() => triggerArtistBroadcast("나 방금 기상했다아... 음성 메시지 한번 들어볼래? 🎙️", true)}
-                          className="bg-slate-900 hover:bg-slate-800 px-2.5 py-1 rounded-full shrink-0 border border-slate-800 text-pink-300"
-                        >
-                          🎙️ 기상보이스
-                        </button>
-                      </div>
-
-                      <div className="flex gap-1.5">
-                        <input 
-                          type="text" 
-                          id="artistBroadcastInput"
-                          placeholder="전체 구독자에게 보낼 브로드캐스트 메시지"
-                          className="flex-1 bg-slate-900 border border-slate-850 rounded-xl px-3 py-2 text-xs text-white focus:outline-none placeholder-slate-500"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              triggerArtistBroadcast(e.target.value);
-                              e.target.value = '';
-                            }
-                          }}
-                        />
-                        <button 
-                          onClick={() => {
-                            const inp = document.getElementById('artistBroadcastInput');
-                            if (inp && inp.value.trim()) {
-                              triggerArtistBroadcast(inp.value);
-                              inp.value = '';
-                            }
-                          }}
-                          className="bg-pink-500 hover:bg-pink-600 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0"
-                        >
-                          전송
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Interactive Fans Reply stream in artist view */}
-                    <div className="space-y-1">
-                      <h4 className="text-[10px] text-slate-400 font-bold">수신된 팬들의 답장 실시간 모니터링</h4>
-                      <div className="h-20 overflow-y-auto bg-slate-900 p-2 rounded-lg space-y-1.5 text-[10px] border border-slate-800/60">
-                        {artistConsoleReplies.map((rep) => (
-                          <div key={rep.id} className="flex justify-between items-start border-b border-slate-800/40 pb-1">
-                            <div>
-                              <span className="text-indigo-400 font-bold mr-1.5">{rep.fanName}:</span>
-                              <span className="text-slate-300">{rep.text}</span>
-                            </div>
-                            <span className="text-[8px] text-slate-500 shrink-0">
-                              {new Date(rep.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* VIEW 3: Settings View */}
-            {activeTab === 'settings' && (
-              <div className="flex-1 flex flex-col p-4 bg-slate-50/50 space-y-4 overflow-y-auto animate-fade-in">
-                <h2 className="font-extrabold text-lg text-slate-800">버블 환경설정</h2>
-                
-                {/* Account Details Box */}
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
-                  <h3 className="text-xs font-bold text-slate-700 border-b pb-1.5">내 정보 설정</h3>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-500">지정된 팬 닉네임:</span>
-                    <span className="font-semibold text-slate-800">{userName}</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-500">구독 기념일 일수:</span>
-                    <span className="font-semibold text-slate-800">D+{subDays}일차</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-500">답장 제한 글자 수:</span>
-                    <span className="font-bold text-indigo-600">{getCharLimit()}글자</span>
-                  </div>
-                </div>
-
-                {/* AI Core Information */}
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-2.5">
-                  <h3 className="text-xs font-bold text-slate-700 border-b pb-1.5 flex items-center gap-1 text-indigo-600">
-                    <Sparkles className="w-4 h-4" /> 탑재된 AI 모델 사양
-                  </h3>
-                  <div className="space-y-1 text-[11px] text-slate-600">
-                    <p>• <b>텍스트 엔진</b>: Gemini 3.1 Flash-Preview (실시간 대화 & 말투 페르소나)</p>
-                    <p>• <b>이미지 생성</b>: Imagen 4.0-Generate (일상 감성 사진 렌더링)</p>
-                    <p>• <b>스피치 오디오</b>: Web Speech API 가이드 프롬프트</p>
-                  </div>
-                </div>
-
-                {/* Application Version */}
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
-                  <h3 className="text-xs font-bold text-slate-700 border-b pb-1.5">버전 정보</h3>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-500">버전 정보:</span>
-                    <span className="text-slate-800 font-medium">v2.1.0 AI Edition</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-500">제공 플랫폼:</span>
-                    <span className="text-slate-800 font-medium">Gemini Responsive Artifact</span>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-indigo-50/70 border border-indigo-100 rounded-2xl text-center">
-                  <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                    "최애의 버블은 Gemini AI가 아티스트의 고유 성격과 특징을 다정하게 학습하여 팬분들께 실시간 소통과 힐링을 드리는 시뮬레이터입니다."
-                  </p>
-                </div>
-              </div>
-            )}
-
-          </div>
-
-          {/* Mobile Bottom Navigation Bar */}
-          <div className="bg-white border-t border-slate-100 py-2.5 px-6 flex justify-around items-center select-none z-10">
-            <button 
-              onClick={() => setActiveTab('artists')}
-              className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'artists' ? 'text-indigo-600 scale-105' : 'text-slate-400 hover:text-slate-600'}`}
-            >
-              <Users className="w-5 h-5" />
-              <span className="text-[10px] font-bold">친구</span>
-            </button>
-
-            <button 
-              onClick={() => setActiveTab('chats')}
-              className={`flex flex-col items-center gap-1 transition-all relative ${activeTab === 'chats' ? 'text-indigo-600 scale-105' : 'text-slate-400 hover:text-slate-600'}`}
-            >
-              <MessageCircle className="w-5 h-5" />
-              <span className="text-[10px] font-bold">채팅</span>
-              {/* Unread dot simulation */}
-              <span className="absolute top-0 right-1.5 w-1.5 h-1.5 bg-pink-500 rounded-full animate-ping" />
-            </button>
-
-            <button 
-              onClick={() => setIsLiveActive(true)}
-              className="flex flex-col items-center gap-1 text-rose-500 hover:scale-105 transition-all"
-            >
-              <div className="relative">
-                <Volume2 className="w-5 h-5" />
-                <span className="absolute -top-1 -right-1.5 w-1.5 h-1.5 bg-red-600 rounded-full" />
-              </div>
-              <span className="text-[10px] font-black animate-pulse">보이스</span>
-            </button>
-
-            <button 
-              onClick={() => setActiveTab('settings')}
-              className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'settings' ? 'text-indigo-600 scale-105' : 'text-slate-400 hover:text-slate-600'}`}
-            >
-              <Settings className="w-5 h-5" />
-              <span className="text-[10px] font-bold">설정</span>
-            </button>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  );
-}
+      }));
+    });
+  </script>
+</body>
+</html>
