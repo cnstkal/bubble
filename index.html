@@ -897,7 +897,7 @@ window.CLOUDINARY_PRESET = 'clowofficial';
                 🤖 실시간 탑재 AI 사양
               </h3>
               <div class="text-[10px] text-slate-600 space-y-1">
-                <p>• <b>글 생성 모델</b>: Stable `gemini-1.5-flash` 안정화 연결 모드</p>
+                <p>• <b>글 생성 모델</b>: Stable `gemini-1.5-pro` 안정화 연결 모드</p>
                 <p>• <b>사진 갤러리 전달자</b>: AI 맞춤 사진 및 맥락 대조 캡션 생성기</p>
                 <p>• <b>사운드 합성 엔진</b>: Web Audio API &amp; Web Speech 합성</p>
               </div>
@@ -1304,7 +1304,7 @@ window.CLOUDINARY_PRESET = 'clowofficial';
 
         
 async callGeminiAPI(contents, systemInstruction) {
-          const apiModels = ['gemini-1.5-flash-latest'];
+          const apiModels = ['gemini-1.5-pro-latest'];
           let finalError = null;
 
           const upgradedSystemPrompt = `
