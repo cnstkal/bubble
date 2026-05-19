@@ -882,7 +882,7 @@
                 🤖 실시간 탑재 AI 사양
               </h3>
               <div class="text-[10px] text-slate-600 space-y-1">
-                <p>• <b>글 생성 모델</b>: Stable `gemini-3-flash` (만료 시 순차 폴백)</p>
+                <p>• <b>글 생성 모델</b>: Stable `gemini-2.5-flash` 자연대화 튜닝</p>
                 <p>• <b>사진 갤러리 전달자</b>: AI 맞춤 사진 및 맥락 대조 캡션 생성기</p>
                 <p>• <b>사운드 합성 엔진</b>: Web Audio API &amp; Web Speech 합성</p>
               </div>
@@ -1287,17 +1287,56 @@
           this.showToast('아티스트 구독 해지가 완료되었습니다.', 'info');
         },
 
-        async callGeminiAPI(contents, systemInstruction) {
-          const apiModels = ['gemini-3-flash', 'gemini-2.5-flash', 'gemini-1.5-flash'];
+        
+async callGeminiAPI(contents, systemInstruction) {
+          const apiModels = ['gemini-2.5-flash', 'gemini-1.5-flash'];
           let finalError = null;
+
+          const upgradedSystemPrompt = `
+${systemInstruction}
+
+[핵심 규칙]
+- 절대 AI처럼 설명하지 마라.
+- 절대 상담사처럼 말하지 마라.
+- 유저 말을 그대로 반복하지 마라.
+- 질문만 계속 던지지 마라.
+- 같은 표현 반복 금지.
+- 너무 모범답안처럼 말하지 마라.
+- 실제 카톡처럼 자연스럽게 말해라.
+- 너무 착한 챗봇처럼 굴지 마라.
+- 대답은 짧고 자연스럽게.
+- 너무 정리된 문장 금지.
+- 메신저 느낌 유지.
+- 가끔 장난쳐라.
+- 오래 알고 지낸 느낌으로 행동.
+- 이모티콘 남발 금지.
+- 답변은 1~4문장.
+- 질문으로 끝나는 비율 줄이기.
+- 유저 문장 복붙 금지.
+- AI 티 나는 말투 금지.
+
+[버블 스타일]
+- 실제 버블처럼 행동.
+- 혼잣말 느낌 허용.
+- 너무 길게 설명하지 마라.
+- 친한 연예인처럼 말해라.
+`;
 
           for (const model of apiModels) {
             try {
               const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${this.apiKey}`;
+
               const payload = {
                 contents: contents,
-                systemInstruction: { parts: [{ text: systemInstruction }] },
-                generationConfig: { temperature: 0.85, maxOutputTokens: 150 }
+                systemInstruction: {
+                  parts: [{ text: upgradedSystemPrompt }]
+                },
+                generationConfig: {
+                  temperature: 1.15,
+                  topP: 0.92,
+                  topK: 40,
+                  maxOutputTokens: 120
+                }
               };
 
               const res = await fetch(url, {
@@ -1308,9 +1347,15 @@
 
               if (res.ok) {
                 const json = await res.json();
-                const responseText = json.candidates?.[0]?.content?.parts?.[0]?.text;
+                let responseText = json.candidates?.[0]?.content?.parts?.[0]?.text;
+
                 if (responseText) {
-                  return { text: responseText, modelUsed: model };
+                  responseText = this.cleanAiResponse(responseText);
+
+                  return {
+                    text: responseText,
+                    modelUsed: model
+                  };
                 }
               } else {
                 const errDetail = await res.json().catch(() => ({}));
@@ -1320,7 +1365,34 @@
               finalError = e.message;
             }
           }
+
           throw new Error(finalError || "All models returned bad states");
+        },
+
+        cleanAiResponse(text) {
+          if (!text) return '';
+
+          const bannedPatterns = [
+            '많이 힘들었겠다',
+            '오늘 하루는 어땠어',
+            '무슨 일이 있었어',
+            '그랬구나',
+            'ㅎㅎㅎㅎㅎㅎ',
+            'ㅠㅠㅠㅠ'
+          ];
+
+          let cleaned = text;
+
+          bannedPatterns.forEach(pattern => {
+            cleaned = cleaned.replaceAll(pattern, '');
+          });
+
+          cleaned = cleaned
+            .replace(/\n{3,}/g, '\n\n')
+            .replace(/([ㅋㅎㅠ])\1{5,}/g, '$1$1$1')
+            .trim();
+
+          return cleaned;
         },
 
         showToast(message, type = 'info') {
@@ -1500,7 +1572,7 @@
 
           const sysPrompt = art.systemInstruction || `당신은 아이돌 ${art.name}입니다. 친절하고 다정하게 대답하세요.`;
 
-          const history = this.sandboxMessages[artistId].slice(-6).map(m => ({
+          const history = this.sandboxMessages[artistId].slice(-20).map(m => ({
             role: m.senderId === 'fan' ? 'user' : 'model',
             parts: [{ text: m.text }]
           }));
@@ -1512,7 +1584,14 @@
 
           try {
             const result = await this.callGeminiAPI(history, sysPrompt);
-            const answerClean = result.text.trim();
+            let answerClean = result.text.trim();
+
+            if (
+              answerClean.includes(userMsg.slice(0, 10)) ||
+              answerClean.startsWith(userMsg.slice(0, 5))
+            ) {
+              answerClean = 'ㅋㅋ 갑자기 그런 말 하니까 좀 웃긴데';
+            }
 
             this.playSound('receive');
             const isVoice = Math.random() > 0.85;
