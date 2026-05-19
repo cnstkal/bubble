@@ -1304,7 +1304,7 @@ window.CLOUDINARY_PRESET = 'clowofficial';
 
         
 async callGeminiAPI(contents, systemInstruction) {
-          const apiModels = ['models/gemini-1.5-flash'];
+          const apiModels = ['gemini-1.5-flash-latest'];
           let finalError = null;
 
           const upgradedSystemPrompt = `
@@ -1339,7 +1339,7 @@ ${systemInstruction}
 
           for (const model of apiModels) {
             try {
-              const url = `https://generativelanguage.googleapis.com/v1beta/${model}:generateContent?key=${this.apiKey}`;
+              const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${this.apiKey}`;
 
               const payload = {
                 contents: contents,
