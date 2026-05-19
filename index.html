@@ -1324,7 +1324,7 @@ ${systemInstruction}
 
           for (const model of apiModels) {
             try {
-              const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${this.apiKey}`;
+              const url = `https://generativelanguage.googleapis.com/v1beta/${model}:generateContent?key=${this.apiKey}`;
 
               const payload = {
                 contents: contents,
