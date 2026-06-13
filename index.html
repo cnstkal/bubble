@@ -118,8 +118,6 @@ html,body{height:100%;background:#050505;display:flex;align-items:center;justify
 .s-label{font-size:15px;color:#fff;}
 .s-val{font-size:14px;color:#555;}
 .hint-box{margin:12px 20px;background:#120a10;border:.5px solid #2a1020;border-radius:12px;padding:14px 16px;font-size:12px;color:#666;line-height:1.7;}
-.apikey-setting{display:flex;align-items:center;justify-content:space-between;padding:15px 20px;border-bottom:.5px solid #111;cursor:pointer;}
-.apikey-setting:active{background:#111;}
 
 /* EDIT SCREEN */
 .edit-screen{position:absolute;inset:0;background:#0e0e0e;z-index:100;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);}
@@ -519,7 +517,7 @@ function showTyping(){
 function removeTyping(){const t=document.getElementById('typing-row');if(t)t.remove();}
 function scrollBottom(){const a=document.getElementById('msgs');setTimeout(()=>a.scrollTop=a.scrollHeight,60);}
 
-// GOOGLE GEMINI API 적용 완료
+// 🚀 구글 표준 v1 주소 및 데이터 구조 완벽 연동 완료
 async function sendMsg(){
   const inp=document.getElementById('msg-input');
   const text=inp.value.trim();
@@ -550,7 +548,7 @@ async function sendMsg(){
       body:JSON.stringify({
         contents: contents,
         systemInstruction: {
-          parts: [{text: `${activeMember.prompt}\n\n현재 시간: ${new Date().toLocaleString('ko-KR')}\n팬 닉네임: "${USER.name}" / 팬 호칭(@@): "${USER.honorific}"\n짧고 자연스럽게. 1~3문장만.`}]
+          parts: [{text: `${activeMember.prompt}\n\n팬 닉네임: "${USER.name}" / 팬 호칭(@@): "${USER.honorific}"\n짧고 자연스럽게. 1~3문장만.`}]
         }
       })
     });
