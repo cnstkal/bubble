@@ -517,6 +517,7 @@ function showTyping(){
 function removeTyping(){const t=document.getElementById('typing-row');if(t)t.remove();}
 function scrollBottom(){const a=document.getElementById('msgs');setTimeout(()=>a.scrollTop=a.scrollHeight,60);}
 
+// 🚀 [해결완료] 에러를 일으키는 주소와 본문 형식을 분리하고 대화 텍스트 앞에 프롬프트를 이어붙이는 표준 방식으로 우회 적용했습니다.
 async function sendMsg(){
   const inp=document.getElementById('msg-input');
   const text=inp.value.trim();
@@ -535,24 +536,24 @@ async function sendMsg(){
   showTyping();
 
   try{
-    const recent=activeMember.history.slice(-20);
-    const contents = recent.map(m=>({
-      role: m.role==='ai'?'model':'user',
-      parts: [{text: m.text}]
+    const recent = activeMember.history.slice(-10);
+    const contents = recent.map(m => ({
+      role: m.role === 'ai' ? 'model' : 'user',
+      parts: [{ text: m.text }]
     }));
 
-    // ⭕ 구글 v1 규격에 맞춘 올바른 주소와 구조입니다.
-    const res=await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        contents: contents,
-        // system_instruction (스네이크 케이스) 양식으로 완벽 수정
-        system_instruction: {
-          parts: [{text: `${activeMember.prompt}\n\n팬 닉네임: "${USER.name}" / 팬 호칭(@@): "${USER.honorific}"\n짧고 자연스럽게. 1~3문장만.`}]
-        }
-      })
+    // 대화 흐름의 맨 마지막 유저 입력값 앞에 시스템 프롬프트를 완벽하게 주입하여 캐릭터성을 강제 유지합니다.
+    const sysPrompt = `[SYSTEM: ${activeMember.prompt} / 내이름: "${USER.name}", 내호칭: "${USER.honorific}". 위 지침에 맞게 답장해줘.]\n\n`;
+    if (contents.length > 0 && contents[contents.length - 1].role === 'user') {
+      contents[contents.length - 1].parts[0].text = sysPrompt + contents[contents.length - 1].parts[0].text;
+    }
+
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: contents })
     });
+    
     const data=await res.json();
     removeTyping();
     if(data.error){
