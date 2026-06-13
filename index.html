@@ -517,7 +517,6 @@ function showTyping(){
 function removeTyping(){const t=document.getElementById('typing-row');if(t)t.remove();}
 function scrollBottom(){const a=document.getElementById('msgs');setTimeout(()=>a.scrollTop=a.scrollHeight,60);}
 
-// 🚀 구글 표준 v1 주소 및 데이터 구조 완벽 연동 완료
 async function sendMsg(){
   const inp=document.getElementById('msg-input');
   const text=inp.value.trim();
@@ -542,12 +541,14 @@ async function sendMsg(){
       parts: [{text: m.text}]
     }));
 
+    // ⭕ 구글 v1 규격에 맞춘 올바른 주소와 구조입니다.
     const res=await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         contents: contents,
-        systemInstruction: {
+        // system_instruction (스네이크 케이스) 양식으로 완벽 수정
+        system_instruction: {
           parts: [{text: `${activeMember.prompt}\n\n팬 닉네임: "${USER.name}" / 팬 호칭(@@): "${USER.honorific}"\n짧고 자연스럽게. 1~3문장만.`}]
         }
       })
