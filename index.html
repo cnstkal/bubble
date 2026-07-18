@@ -13,10 +13,9 @@
   }
   /* Status bar */
   .statusbar {
-    display:flex; justify-content:space-between; align-items:center;
+    display:flex; justify-content:flex-start; align-items:center;
     padding:14px 20px 8px; color:#fff; font-size:15px; font-weight:600; flex-shrink:0;
   }
-  .statusbar .icons { display:flex; align-items:center; gap:6px; font-size:13px; }
   .light .statusbar { color:#111; }
 
   /* Top nav */
@@ -38,8 +37,9 @@
   }
 
   /* Scroll content */
-  .content { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-bottom:70px; }
+  .content { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-bottom:20px; }
   .content::-webkit-scrollbar { display:none; }
+  .has-tabbar .content { padding-bottom:80px; }
 
   /* Section header */
   .section-title {
@@ -71,10 +71,6 @@
     position:absolute; left:8px; bottom:8px; background:#000; color:#fff; font-size:11px;
     font-weight:800; padding:4px 8px; border-radius:4px; display:flex; align-items:center; gap:4px;
   }
-  .media-card .yt {
-    position:absolute; right:8px; bottom:8px; background:rgba(0,0,0,.7); color:#fff;
-    font-size:10px; padding:3px 7px; border-radius:4px; font-weight:600;
-  }
   .media-card .cap { color:#fff; font-weight:700; font-size:15px; margin-top:10px; line-height:1.3; }
   .light .media-card .cap { color:#111; }
   .media-card .sub { color:#999; font-size:12.5px; margin-top:4px; line-height:1.4; }
@@ -94,7 +90,6 @@
     width:64px; height:64px; border-radius:50%; padding:2px; background:#ddd center/cover no-repeat;
     display:flex; align-items:center; justify-content:center; border:2px solid #2ecc71; margin:0 auto;
   }
-  .story .ring img { width:100%; height:100%; border-radius:50%; object-fit:cover; }
   .story .label { font-size:12px; margin-top:6px; color:#222; }
 
   /* Post list (light community/ATEEZ TALK) */
@@ -131,9 +126,11 @@
     position:absolute; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #eee;
     display:flex; padding:8px 0 22px; z-index:20;
   }
-  .tabbar .tab { flex:1; text-align:center; color:#999; font-size:11px; cursor:pointer; }
-  .tabbar .tab .ic { font-size:20px; display:block; margin-bottom:3px; }
+  .tabbar .tab { flex:1; text-align:center; color:#aaa; font-size:11px; cursor:pointer; }
+  .tabbar .tab svg { width:22px; height:22px; display:block; margin:0 auto 3px; }
   .tabbar .tab.active { color:#111; font-weight:700; }
+  .tabbar .tab .ic-stroke { fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .tabbar .tab .ic-fill { fill:currentColor; }
 
   /* sub tabs (community) */
   .subtabs { display:flex; gap:22px; padding:14px 20px 12px; border-bottom:1px solid #eee; color:#111; }
@@ -155,16 +152,19 @@
   .hero-banner .join-btn { background:#fff; color:#111; font-weight:700; padding:12px 30px; border-radius:30px; font-size:14px; }
 
   .placeholder-note { text-align:center; color:#999; font-size:13px; padding:40px 20px; }
+
+  .screen { display:none; flex-direction:column; height:100%; position:relative; }
+  .screen.visible { display:flex; }
 </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- ============ HOME (dark) ============ -->
-  <div id="screen-home" class="screen dark">
-    <div class="statusbar"><span>12:53</span><span class="icons">📶 🔋58%</span></div>
+  <!-- ============ TOKTOQ HOME (dark, no tabbar) ============ -->
+  <div id="screen-home" class="screen dark visible">
+    <div class="statusbar"><span>12:53</span></div>
     <div class="topnav">
-      <div class="left"><span class="menu-icon">☰</span><span class="brand" onclick="showScreen('home')">TOKTOQ</span></div>
+      <div class="left"><span class="menu-icon">☰</span><span class="brand">TOKTOQ</span></div>
       <div class="right">
         <span onclick="showScreen('notice')">🔔<i class="dot"></i></span>
         <span>🗓️</span>
@@ -174,12 +174,12 @@
     </div>
     <div class="content">
       <div class="section-title">아티스트</div>
-      <div class="artist-row" onclick="showScreen('artistfeed')">
+      <div class="artist-row" onclick="enterArtist('ateez')">
         <img src="https://placehold.co/44x44/111/fff?text=AZ">
         <div class="name">ATEEZ(에이티즈) OFFICIAL P...</div>
         <div class="chev">›</div>
       </div>
-      <div class="artist-row" onclick="showScreen('artistfeed')">
+      <div class="artist-row" onclick="enterArtist('xikers')">
         <img src="https://placehold.co/44x44/222/fff?text=XK">
         <div class="name">xikers(싸이커스) OFFICIAL P...</div>
         <div class="chev">›</div>
@@ -222,14 +222,48 @@
       </div>
       <div style="height:20px"></div>
     </div>
+  </div>
+
+  <!-- ============ ARTIST HOME (hero banner, first screen after entering artist) ============ -->
+  <div id="screen-artisthome" class="screen light has-tabbar">
+    <div class="content" style="padding-bottom:80px;">
+      <div class="hero-banner" style="background-image:url('https://placehold.co/430x620/0a0a1a/ffffff?text=ATEEZ+GOLDEN+HOUR:Part.5')">
+        <div class="statusbar" style="position:absolute;top:0;left:0;right:0;color:#fff;padding-bottom:0;"><span>12:53</span></div>
+        <div class="topnav" style="position:absolute;top:34px;left:0;right:0;color:#fff;">
+          <div class="left"><span class="menu-icon">☰</span><span class="brand" onclick="showScreen('home')" style="font-style:normal;text-decoration:underline;text-underline-offset:5px;">ATEEZ</span></div>
+          <div class="right"><span>🔔<i class="dot"></i></span><span>🗓️</span><span>🛍️</span><span class="avatar">🏆</span></div>
+        </div>
+        <div class="logos">▶ 𝕏 📷 f</div>
+        <div class="join-btn">멤버십 가입</div>
+      </div>
+      <div class="grid2" style="grid-template-columns:1fr 1fr 1fr; gap:8px; padding:16px 16px;">
+        <div>
+          <div class="thumb" style="background-image:url('https://placehold.co/150x220/8b5a2b/fff?text=여상');border-radius:14px;"></div>
+          <div class="comment" style="text-align:center;">여상</div>
+        </div>
+        <div>
+          <div class="thumb" style="background-image:url('https://placehold.co/150x220/2b3a2b/fff?text=홍중');border-radius:14px;"></div>
+          <div class="comment" style="text-align:center;">홍중</div>
+        </div>
+        <div>
+          <div class="thumb" style="background:#0a1a4d;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;text-align:center;padding:10px;">To. 사랑하는 에이티니에게...</div>
+          <div class="comment" style="text-align:center;">여상</div>
+        </div>
+      </div>
+      <div class="section-title">X ATEEZ Official</div>
+      <div class="grid2">
+        <div><div class="thumb" style="background-image:url('https://placehold.co/300x180/444/fff?text=X+post')"></div></div>
+        <div><div class="thumb" style="background-image:url('https://placehold.co/300x180/555/fff?text=X+post+2')"></div></div>
+      </div>
+    </div>
     <div class="tabbar"></div>
   </div>
 
   <!-- ============ ARTIST FEED (light) ============ -->
-  <div id="screen-artistfeed" class="screen light" style="display:none;">
-    <div class="statusbar"><span>12:53</span><span class="icons">📶 🔋58%</span></div>
+  <div id="screen-artistfeed" class="screen light has-tabbar">
+    <div class="statusbar"><span>12:53</span></div>
     <div class="topnav">
-      <div class="left"><span class="menu-icon">☰</span><span class="brand" onclick="showScreen('home')">ATEEZ</span></div>
+      <div class="left"><span class="menu-icon">☰</span><span class="brand" onclick="showScreen('home')" style="font-style:normal;text-decoration:underline;text-underline-offset:5px;">ATEEZ</span></div>
       <div class="right">
         <span>🔔<i class="dot"></i></span><span>🗓️</span><span>🛍️</span><span class="avatar">🏆</span>
       </div>
@@ -260,10 +294,10 @@
   </div>
 
   <!-- ============ ATEEZ TALK (light, stories) ============ -->
-  <div id="screen-talk" class="screen light" style="display:none;">
-    <div class="statusbar"><span>12:53</span><span class="icons">📶 🔋58%</span></div>
+  <div id="screen-talk" class="screen light has-tabbar">
+    <div class="statusbar"><span>12:53</span></div>
     <div class="topnav">
-      <div class="left"><span class="menu-icon">☰</span><span class="brand" onclick="showScreen('home')">ATEEZ</span></div>
+      <div class="left"><span class="menu-icon">☰</span><span class="brand" onclick="showScreen('home')" style="font-style:normal;text-decoration:underline;text-underline-offset:5px;">ATEEZ</span></div>
       <div class="right"><span>🔔<i class="dot"></i></span><span>🗓️</span><span>🛍️</span><span class="avatar">🏆</span></div>
     </div>
     <div class="content">
@@ -288,10 +322,10 @@
   </div>
 
   <!-- ============ POP (chat list, light) ============ -->
-  <div id="screen-pop" class="screen light" style="display:none;">
-    <div class="statusbar"><span>12:53</span><span class="icons">📶 🔋58%</span></div>
+  <div id="screen-pop" class="screen light has-tabbar">
+    <div class="statusbar"><span>12:53</span></div>
     <div class="topnav">
-      <div class="left"><span class="menu-icon">☰</span><span class="brand" onclick="showScreen('home')">ATEEZ</span></div>
+      <div class="left"><span class="menu-icon">☰</span><span class="brand" onclick="showScreen('home')" style="font-style:normal;text-decoration:underline;text-underline-offset:5px;">ATEEZ</span></div>
       <div class="right"><span>🔔<i class="dot"></i></span><span>🗓️</span><span>🛍️</span><span class="avatar">🏆</span></div>
     </div>
     <div class="content">
@@ -303,10 +337,10 @@
   </div>
 
   <!-- ============ CONTENTS (grid, light) ============ -->
-  <div id="screen-contents" class="screen light" style="display:none;">
-    <div class="statusbar"><span>12:53</span><span class="icons">📶 🔋58%</span></div>
+  <div id="screen-contents" class="screen light has-tabbar">
+    <div class="statusbar"><span>12:53</span></div>
     <div class="topnav">
-      <div class="left"><span class="menu-icon">☰</span><span class="brand" onclick="showScreen('home')">ATEEZ</span></div>
+      <div class="left"><span class="menu-icon">☰</span><span class="brand" onclick="showScreen('home')" style="font-style:normal;text-decoration:underline;text-underline-offset:5px;">ATEEZ</span></div>
       <div class="right"><span>🔔<i class="dot"></i></span><span>🗓️</span><span>🛍️</span><span class="avatar">🏆</span></div>
     </div>
     <div class="content">
@@ -337,10 +371,10 @@
   </div>
 
   <!-- ============ COMMUNITY (light, notice pinned) ============ -->
-  <div id="screen-community" class="screen light" style="display:none;">
-    <div class="statusbar"><span>12:53</span><span class="icons">📶 🔋58%</span></div>
+  <div id="screen-community" class="screen light has-tabbar">
+    <div class="statusbar"><span>12:53</span></div>
     <div class="topnav">
-      <div class="left"><span class="menu-icon">☰</span><span class="brand" onclick="showScreen('home')">ATEEZ</span></div>
+      <div class="left"><span class="menu-icon">☰</span><span class="brand" onclick="showScreen('home')" style="font-style:normal;text-decoration:underline;text-underline-offset:5px;">ATEEZ</span></div>
       <div class="right"><span>🔔<i class="dot"></i></span><span>🗓️</span><span>🛍️</span><span class="avatar">🏆</span></div>
     </div>
     <div class="subtabs">
@@ -374,52 +408,39 @@
     <div class="tabbar"></div>
   </div>
 
-  <!-- ============ SHOP / HOME banner (light hero) ============ -->
-  <div id="screen-shop" class="screen light" style="display:none;">
-    <div class="statusbar" style="position:absolute;top:0;left:0;right:0;z-index:5;color:#fff;"><span>12:53</span><span class="icons">📶 🔋58%</span></div>
-    <div class="content" style="padding-bottom:70px;">
-      <div class="hero-banner" style="background-image:url('https://placehold.co/430x620/0a0a1a/ffffff?text=ATEEZ+GOLDEN+HOUR:Part.5')">
-        <div class="topnav" style="position:absolute;top:36px;left:0;right:0;color:#fff;">
-          <div class="left"><span class="menu-icon">☰</span><span class="brand">ATEEZ</span></div>
-          <div class="right"><span>🔔<i class="dot"></i></span><span>🗓️</span><span>🛍️</span><span class="avatar">🏆</span></div>
-        </div>
-        <div class="logos">▶ 𝕏 📷 f</div>
-        <div class="join-btn">멤버십 가입</div>
-      </div>
-      <div class="grid2" style="grid-template-columns:1fr 1fr 1fr; gap:8px; padding:16px 16px;">
-        <div>
-          <div class="thumb" style="background-image:url('https://placehold.co/150x220/8b5a2b/fff?text=여상');border-radius:14px;"></div>
-          <div class="comment" style="text-align:center;">여상</div>
-        </div>
-        <div>
-          <div class="thumb" style="background-image:url('https://placehold.co/150x220/2b3a2b/fff?text=홍중');border-radius:14px;"></div>
-          <div class="comment" style="text-align:center;">홍중</div>
-        </div>
-        <div>
-          <div class="thumb" style="background:#0a1a4d;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;text-align:center;padding:10px;">To. 사랑하는 에이티니에게...</div>
-          <div class="comment" style="text-align:center;">여상</div>
-        </div>
-      </div>
-      <div class="section-title">X ATEEZ Official</div>
+  <!-- ============ SHOP (light) ============ -->
+  <div id="screen-shop" class="screen light has-tabbar">
+    <div class="statusbar"><span>12:53</span></div>
+    <div class="topnav">
+      <div class="left"><span class="menu-icon">☰</span><span class="brand" onclick="showScreen('home')" style="font-style:normal;text-decoration:underline;text-underline-offset:5px;">ATEEZ</span></div>
+      <div class="right"><span>🔔<i class="dot"></i></span><span>🗓️</span><span>🛍️</span><span class="avatar">🏆</span></div>
+    </div>
+    <div class="content">
       <div class="grid2">
-        <div><div class="thumb" style="background-image:url('https://placehold.co/300x180/444/fff?text=X+post')"></div></div>
-        <div><div class="thumb" style="background-image:url('https://placehold.co/300x180/555/fff?text=X+post+2')"></div></div>
+        <div>
+          <div class="thumb" style="background-image:url('https://placehold.co/300x300/333/fff?text=Album')"></div>
+          <div class="cap">GOLDEN HOUR : Part.5 앨범</div>
+        </div>
+        <div>
+          <div class="thumb" style="background-image:url('https://placehold.co/300x300/444/fff?text=Lightstick')"></div>
+          <div class="cap">공식 응원봉</div>
+        </div>
       </div>
+      <div class="placeholder-note">Shop 준비중입니다</div>
     </div>
     <div class="tabbar"></div>
   </div>
 
   <!-- ============ NOTICE bell placeholder ============ -->
-  <div id="screen-notice" class="screen light" style="display:none;">
-    <div class="statusbar"><span>12:53</span><span class="icons">📶 🔋58%</span></div>
+  <div id="screen-notice" class="screen light">
+    <div class="statusbar"><span>12:53</span></div>
     <div class="topnav">
-      <div class="left"><span class="menu-icon">☰</span><span class="brand" onclick="showScreen('home')">ATEEZ</span></div>
+      <div class="left"><span class="menu-icon">☰</span><span class="brand" onclick="showScreen('home')">TOKTOQ</span></div>
       <div class="right"><span>🗓️</span><span>🛍️</span><span class="avatar">🏆</span></div>
     </div>
     <div class="content">
       <div class="placeholder-note">알림이 없습니다.</div>
     </div>
-    <div class="tabbar"></div>
   </div>
 
 </div>
@@ -446,13 +467,23 @@
     chatList.appendChild(div);
   });
 
+  // vector (SVG) icon defs for tabbar
+  const icons = {
+    home: '<svg viewBox="0 0 24 24"><path class="ic-stroke" d="M3 11.5 12 4l9 7.5"/><path class="ic-stroke" d="M5.5 10.5V20h13v-9.5"/><path class="ic-stroke" d="M9.5 20v-6h5v6"/></svg>',
+    talk: '<svg viewBox="0 0 24 24"><path class="ic-stroke" d="M4 5.5h16v10H9l-4 3.5v-3.5H4z"/><path class="ic-stroke" d="M7.5 9h9M7.5 12h6"/></svg>',
+    pop: '<svg viewBox="0 0 24 24"><circle class="ic-stroke" cx="12" cy="12" r="8.5"/><path class="ic-stroke" d="M9 10c0-1.4 1.2-2.3 2.6-2.1 1.2.2 2 1.1 1.9 2.2-.1 1-1 1.5-1.9 2-.5.3-.7.7-.7 1.4"/><circle class="ic-fill" cx="12" cy="16.2" r="0.9"/></svg>',
+    contents: '<svg viewBox="0 0 24 24"><rect class="ic-stroke" x="3.5" y="5.5" width="17" height="13" rx="2"/><path class="ic-fill" d="M10.5 9.3v5.4l4.6-2.7z"/></svg>',
+    community: '<svg viewBox="0 0 24 24"><circle class="ic-stroke" cx="9" cy="9" r="2.6"/><circle class="ic-stroke" cx="17" cy="10" r="2.1"/><path class="ic-stroke" d="M4 19c0-2.9 2.2-5 5-5s5 2.1 5 5"/><path class="ic-stroke" d="M14.5 14.5c2.2.2 3.9 2 3.9 4.3"/></svg>',
+    shop: '<svg viewBox="0 0 24 24"><path class="ic-stroke" d="M5.5 8.5h13l-1 11h-11z"/><path class="ic-stroke" d="M8.5 8.5v-1a3.5 3.5 0 0 1 7 0v1"/></svg>',
+  };
+
   const tabs = [
-    {id:'home', label:'Home', icon:'🏠'},
-    {id:'talk', label:'ATEEZ TALK', icon:'📄'},
-    {id:'pop', label:'POP', icon:'💬'},
-    {id:'contents', label:'Contents', icon:'▶️'},
-    {id:'community', label:'Community', icon:'👥'},
-    {id:'shop', label:'Shop', icon:'🛍️'},
+    {id:'artisthome', label:'Home', icon:'home'},
+    {id:'talk', label:'ATEEZ TALK', icon:'talk'},
+    {id:'pop', label:'POP', icon:'pop'},
+    {id:'contents', label:'Contents', icon:'contents'},
+    {id:'community', label:'Community', icon:'community'},
+    {id:'shop', label:'Shop', icon:'shop'},
   ];
 
   function buildTabbars(){
@@ -460,25 +491,23 @@
       const screenId = bar.closest('.screen').id.replace('screen-','');
       bar.innerHTML = tabs.map(t=>`
         <div class="tab ${screenId===t.id?'active':''}" onclick="showScreen('${t.id}')">
-          <span class="ic">${t.icon}</span>${t.label}
+          ${icons[t.icon]}${t.label}
         </div>`).join('');
     });
   }
 
   function showScreen(id){
-    document.querySelectorAll('.screen').forEach(s=>s.style.display='none');
-    const target = document.getElementById('screen-'+id);
-    if(target) target.style.display='flex';
-    else document.getElementById('screen-home').style.display='flex';
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('visible'));
+    const target = document.getElementById('screen-'+id) || document.getElementById('screen-home');
+    target.classList.add('visible');
     buildTabbars();
     window.scrollTo(0,0);
   }
 
-  document.querySelectorAll('.screen').forEach(s=>{
-    s.style.flexDirection='column';
-    s.style.height='100%';
-    s.style.position='relative';
-  });
+  function enterArtist(which){
+    // (구조상 두 아티스트 모두 동일한 데모 화면을 사용)
+    showScreen('artisthome');
+  }
 
   buildTabbars();
   showScreen('home');
