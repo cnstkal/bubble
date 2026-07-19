@@ -6,10 +6,10 @@
 <title>ATEEZ TOKTOQ</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html,body { height:100%; background:#111; font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,"Malgun Gothic",sans-serif; }
+  html,body { height:100%; background:#fff; font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,"Malgun Gothic",sans-serif; }
   #app {
     width:100%; max-width:430px; height:100vh; margin:0 auto; position:relative;
-    background:#0e0e0e; overflow:hidden; display:flex; flex-direction:column;
+    background:#fff; overflow:hidden; display:flex; flex-direction:column;
   }
   .statusbar { display:flex; align-items:center; padding:14px 20px 8px; color:#fff; font-size:15px; font-weight:600; flex-shrink:0; }
   .light .statusbar { color:#111; }
@@ -34,7 +34,8 @@
   .light .section-title { color:#111; }
   .section-title .more { float:right; font-size:13px; color:#999; font-weight:400; }
 
-  .artist-row { display:flex; align-items:center; gap:14px; background:#1c1c1e; margin:0 16px 10px; padding:14px 16px; border-radius:14px; color:#fff; cursor:pointer; }
+  .artist-row { display:flex; align-items:center; gap:14px; background:#f5f5f5; margin:0 16px 10px; padding:14px 16px; border-radius:14px; color:#111; cursor:pointer; }
+  .light .artist-row .chev { color:#999; }
   .artist-row img { width:44px; height:44px; border-radius:10px; object-fit:cover; background:#333;}
   .artist-row .name { flex:1; font-weight:700; font-size:16px; }
   .artist-row .chev { color:#666; }
@@ -136,7 +137,7 @@
 <div id="app">
 
   <!-- ============ TOKTOQ HOME (dark, no tabbar) ============ -->
-  <div id="screen-home" class="screen dark visible">
+  <div id="screen-home" class="screen light visible">
     <div class="statusbar"><span>12:53</span></div>
     <div class="topnav">
       <div class="left"><span class="menu-icon">☰</span><span class="brand">TOKTOQ</span></div>
